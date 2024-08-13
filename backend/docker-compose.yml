@@ -1,0 +1,27 @@
+version: '3'
+services:
+  mongodb:
+    image: mongo
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    networks:
+      - backend
+  backend:
+    build:
+      context: ./ecommerce_facedetectionlogin-backend
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongodb
+    networks:
+      - backend
+  frontend:
+    build:
+      context: ./ecommerce_facedetectionlogin-frontend
+    ports:
+      - "3000:3000"
+    networks:
+      - backend
+networks:
+  backend:
