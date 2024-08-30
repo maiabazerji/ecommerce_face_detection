@@ -2,212 +2,88 @@ package main
 
 import (
     "context"
+    "encoding/json"
     "log"
     "net/http"
-    "time"
-    "bytes"
-    "mime/multipart"
-    "encoding/json"
-    "io/ioutil"
-    "os"
-
-    "github.com/gin-contrib/cors"
-    "github.com/gin-gonic/gin"
+    "github.com/gorilla/mux"
     "go.mongodb.org/mongo-driver/bson"
     "go.mongodb.org/mongo-driver/mongo"
     "go.mongodb.org/mongo-driver/mongo/options"
+    "github.com/rs/cors"
+    "github.com/joho/godotenv"
+    "go.mongodb.org/mongo-driver/bson/primitive"
+    "time"
+    "os"
 )
 
 var client *mongo.Client
 
+// Product struct for MongoDB document
+type Product struct {
+    ID           primitive.ObjectID `json:"id" bson:"_id"`
+    Name         string             `json:"name" bson:"name"`
+    Brand        string             `json:"brand" bson:"brand"`
+    Price        float64            `json:"price" bson:"price"`
+    Category     string             `json:"category" bson:"category"`
+    Rating       float64            `json:"rating" bson:"rating"`
+    NumReviews   int                `json:"numReviews" bson:"numReviews"`
+    CountInStock int                `json:"countInStock" bson:"countInStock"`
+    ImageURL     string             `json:"image_url" bson:"image_url"`
+}
+
 func main() {
-    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-    defer cancel()
-    var err error
-    client, err = mongo.Connect(ctx, options.Client().ApplyURI("mongodb://mongodb:27017"))
+    // Load environment variables
+    err := godotenv.Load()
+    if err != nil {
+        log.Fatal("Error loading .env file")
+    }
+
+    // // Set up MongoDB Atlas connection
+    // uri := "mongodb+srv://<maiabazerji>:<jxIq82co3YwRfpZy>@cluster0.mongodb.net/<ecommerce>?retryWrites=true&w=majority"
+    uri := os.Getenv("MONGODB_URI")
+    // connectionString := os.Getenv(uri)
+    clientOptions := options.Client().ApplyURI(uri).SetServerSelectionTimeout(10 * time.Second)
+    client, err = mongo.Connect(context.TODO(), clientOptions)
     if err != nil {
         log.Fatal(err)
     }
 
-    r := gin.Default()
+    // Check the connection
+    err = client.Ping(context.TODO(), nil)
+    if err != nil {
+        log.Fatal(err)
+    }
+    log.Println("Connected to MongoDB Atlas!")
 
-    // CORS Middleware
-    r.Use(cors.New(cors.Config{
-        AllowOrigins: []string{"http://localhost:3000"},
-        AllowMethods: []string{"GET", "POST", "PUT", "DELETE"},
-        AllowHeaders: []string{"Origin", "Content-Type", "Authorization"},
-    }))
+    // Set up routes
+    r := mux.NewRouter()
+    r.HandleFunc("/products", GetProducts).Methods("GET")
+    // Add more routes as needed
 
-    // Product routes
-    r.GET("/products", getProducts)
-    r.GET("/products/:id", getProduct)
-    r.POST("/products", createProduct)
-    r.PUT("/products/:id", updateProduct)
-    r.DELETE("/products/:id", deleteProduct)
-
-    // User routes (using face detection)
-    r.POST("/register", registerUser)
-    r.POST("/login", loginUser)
-
-    r.Run(":5000")
+    // Set up CORS
+    handler := cors.Default().Handler(r)
+    log.Println("Starting server on port 8000...")
+    // Start the server
+    log.Fatal(http.ListenAndServe(":8000", handler))
 }
 
-// MongoDB Product Handlers
-
-func getProducts(c *gin.Context) {
+// GetProducts handles GET requests to retrieve products from MongoDB Atlas
+func GetProducts(w http.ResponseWriter, r *http.Request) {
     collection := client.Database("ecommerce").Collection("products")
-    cur, err := collection.Find(context.Background(), bson.D{})
+
+    cursor, err := collection.Find(context.TODO(), bson.M{})
     if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        http.Error(w, err.Error(), http.StatusInternalServerError)
         return
     }
-    var products []bson.M
-    if err = cur.All(context.Background(), &products); err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-        return
-    }
-    c.JSON(http.StatusOK, products)
-}
+    defer cursor.Close(context.TODO())
 
-func getProduct(c *gin.Context) {
-    id := c.Param("id")
-    collection := client.Database("ecommerce").Collection("products")
-    var product bson.M
-    err := collection.FindOne(context.Background(), bson.M{"_id": id}).Decode(&product)
-    if err != nil {
-        c.JSON(http.StatusNotFound, gin.H{"error": "Product not found"})
-        return
-    }
-    c.JSON(http.StatusOK, product)
-}
-
-func createProduct(c *gin.Context) {
-    var product bson.M
-    if err := c.BindJSON(&product); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-        return
-    }
-    collection := client.Database("ecommerce").Collection("products")
-    _, err := collection.InsertOne(context.Background(), product)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-        return
-    }
-    c.JSON(http.StatusCreated, product)
-}
-
-func updateProduct(c *gin.Context) {
-    id := c.Param("id")
-    var product bson.M
-    if err := c.BindJSON(&product); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-        return
-    }
-    collection := client.Database("ecommerce").Collection("products")
-    _, err := collection.UpdateOne(context.Background(), bson.M{"_id": id}, bson.M{"$set": product})
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-        return
-    }
-    c.JSON(http.StatusOK, product)
-}
-
-func deleteProduct(c *gin.Context) {
-    id := c.Param("id")
-    collection := client.Database("ecommerce").Collection("products")
-    _, err := collection.DeleteOne(context.Background(), bson.M{"_id": id})
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-        return
-    }
-    c.JSON(http.StatusNoContent, nil)
-}
-
-// Python Face Detection Integration
-
-func callFaceAuthService(endpoint, imagePath, username string) (*FaceAuthResponse, error) {
-    file, err := os.Open(imagePath)
-    if err != nil {
-        return nil, err
-    }
-    defer file.Close()
-
-    var requestBody bytes.Buffer
-    writer := multipart.NewWriter(&requestBody)
-    _, err = writer.CreateFormFile("image", file.Name())
-    if err != nil {
-        return nil, err
-    }
-    _, err = ioutil.ReadAll(file)
-    if err != nil {
-        return nil, err
-    }
-
-    if username != "" {
-        writer.WriteField("username", username)
-    }
-
-    writer.Close()
-
-    req, err := http.NewRequest("POST", endpoint, &requestBody)
-    if err != nil {
-        return nil, err
-    }
-    req.Header.Set("Content-Type", writer.FormDataContentType())
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        return nil, err
-    }
-    defer resp.Body.Close()
-
-    var faceAuthResponse FaceAuthResponse
-    if err := json.NewDecoder(resp.Body).Decode(&faceAuthResponse); err != nil {
-        return nil, err
-    }
-
-    return &faceAuthResponse, nil
-}
-
-func registerUser(c *gin.Context) {
-    imagePath := c.PostForm("image_path")
-    username := c.PostForm("username")
-
-    response, err := callFaceAuthService("http://localhost:5000/register", imagePath, username)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Error contacting face auth service"})
+    var products []Product
+    if err = cursor.All(context.TODO(), &products); err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
         return
     }
 
-    if response.Error != "" {
-        c.JSON(http.StatusBadRequest, gin.H{"error": response.Error})
-        return
-    }
-
-    c.JSON(http.StatusCreated, gin.H{"message": response.Message})
-}
-
-func loginUser(c *gin.Context) {
-    imagePath := c.PostForm("image_path")
-
-    response, err := callFaceAuthService("http://localhost:5000/login", imagePath, "")
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Error contacting face auth service"})
-        return
-    }
-
-    if response.Error != "" {
-        c.JSON(http.StatusUnauthorized, gin.H{"error": response.Error})
-        return
-    }
-
-    c.JSON(http.StatusOK, gin.H{"message": response.Message, "username": response.Username})
-}
-
-// FaceAuthResponse defines the structure of the response from the face auth service
-type FaceAuthResponse struct {
-    Message  string `json:"message"`
-    Username string `json:"username,omitempty"`
-    Error    string `json:"error,omitempty"`
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(products)
 }

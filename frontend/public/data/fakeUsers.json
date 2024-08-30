@@ -1,0 +1,12 @@
+{
+    "users": [
+        {
+            "id": 1,
+            "name": "maia",
+            "email": "maiabazerji@gmail.com",
+            "username": "maiabazerji",
+            "password": "password123",
+            "image": "photo.jpg"
+        }
+    ]
+}

@@ -10,7 +10,10 @@ import (
 var ProductCollection *mongo.Collection
 
 func ConnectDB() {
-    clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
+    clientOptions := options.Client().ApplyURI("MONGODB_URI")
+    // clientOptions := options.Client().ApplyURI("mongodb://localhost:27017").SetTLSConfig(&tls.Config{InsecureSkipVerify: true}) 
+    // clientOptions := options.Client().ApplyURI("mongodb://localhost:27017").SetTLSConfig(&tls.Config{})
+    // clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
     client, err := mongo.Connect(context.TODO(), clientOptions)
     if err != nil {
         log.Fatal(err)
