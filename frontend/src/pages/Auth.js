@@ -59,7 +59,7 @@ const Input = styled.input`
 
 const Button = styled.button`
   padding: 10px;
-  background-color: ${props => (props.secondary ? "#007bff" : "#28a745")};
+  background-color: ${({ secondary }) => (secondary ? "#007bff" : "#28a745")};
   color: white;
   border: none;
   border-radius: 5px;
@@ -68,7 +68,7 @@ const Button = styled.button`
   margin-top: 10px;
 
   &:hover {
-    background-color: ${props => (props.secondary ? "#0056b3" : "#218838")};
+    background-color: ${({ secondary }) => (secondary ? "#0056b3" : "#218838")};
   }
 `;
 
@@ -83,8 +83,8 @@ const CameraButton = styled(Button)`
 `;
 
 const Video = styled.video`
-  display: ${props => (props.$isCameraEnabled ? "block" : "none")};
-  width: 320px; /* Adjust the size of the camera preview */
+  display: ${({ $isCameraEnabled }) => ($isCameraEnabled ? "block" : "none")};
+  width: 320px;
   height: 240px;
   margin-top: 10px;
 `;
@@ -120,7 +120,7 @@ const Auth = () => {
       setVideoStream(null);
     }
     setIsCameraEnabled(false);
-  }, [videoStream, setVideoStream, setIsCameraEnabled]);
+  }, [videoStream]);
 
   useEffect(() => {
     if (!isLogin) {
@@ -130,27 +130,21 @@ const Auth = () => {
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
-
-    if (name === "photo") {
-      setFormData({ ...formData, [name]: files[0] });
-    } else {
-      setFormData({ ...formData, [name]: value });
-    }
+    setFormData({ ...formData, [name]: files ? files[0] : value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage(null);
+    const data = new FormData();
+    data.append("username", formData.username);
+    data.append("email", formData.email);
+    data.append("password", formData.password);
+    if (formData.photo) {
+      data.append("photo", formData.photo);
+    }
+
     try {
-      const data = new FormData();
-      data.append("username", formData.username);
-      data.append("email", formData.email);
-      data.append("password", formData.password);
-
-      if (formData.photo) {
-        data.append("photo", formData.photo);
-      }
-
       const response = isLogin
         ? await axios.post("http://localhost:3000/login", { email: formData.email, password: formData.password })
         : await axios.post("http://localhost:3000/signup", data, {
@@ -173,13 +167,10 @@ const Auth = () => {
 
   const handleCameraLogin = async () => {
     setIsCameraEnabled(true);
-    const video = document.getElementById("video");
-
     if (!videoStream) {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
-      video.srcObject = stream;
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      document.getElementById("video").srcObject = stream;
       setVideoStream(stream);
-      video.play();
     }
   };
 
@@ -234,16 +225,16 @@ const Auth = () => {
         {!isLogin && (
           <>
             <label htmlFor="photo">Upload your photo for facial recognition login:</label>
-            <Input
-              type="file"
-              name="photo"
-              accept="image/*"
-              onChange={handleChange}
-              required
-            />
-            <Button type="submit" secondary>
-              Sign Up
-            </Button>
+            <CameraButton type="button" onClick={handleCameraLogin}>
+              <FontAwesomeIcon icon={faCamera} />
+              Signup by Camera
+            </CameraButton>
+            <Video id="video" autoPlay $isCameraEnabled={isCameraEnabled} />
+            {isCameraEnabled && (
+              <Button type="button" onClick={captureImage}>
+                Capture Image
+              </Button>
+            )}
           </>
         )}
         {isLogin && (
@@ -253,7 +244,7 @@ const Auth = () => {
               <FontAwesomeIcon icon={faCamera} />
               Login by Camera
             </CameraButton>
-            <Video id="video" autoPlay $isCameraEnabled={isCameraEnabled}></Video>
+            <Video id="video" autoPlay $isCameraEnabled={isCameraEnabled} />
             {isCameraEnabled && (
               <Button type="button" onClick={captureImage}>
                 Capture Image

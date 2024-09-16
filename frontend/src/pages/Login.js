@@ -56,7 +56,7 @@ const Video = styled.video`
 
 const Login = () => {
   const [formData, setFormData] = useState({
-    email: "",
+    username: "",
     password: ""
   });
 
@@ -94,7 +94,7 @@ const Login = () => {
     canvas.height = video.videoHeight;
     const context = canvas.getContext("2d");
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const image = canvas.toDataURL("image/png");
+    const image = canvas.toDataURL("image/png", "image/jpeg");
 
     // Send image to backend
     const response = await fetch("YOUR_BACKEND_URL", {
@@ -108,7 +108,6 @@ const Login = () => {
     const result = await response.json();
     console.log("Face recognition result:", result);
 
-    // Handle the response from backend
   };
 
   return (

@@ -15,9 +15,7 @@ import { CartProvider } from "./context/CartContext";
 import AdminDashboard from './components/AdminDashboard';
 import UserDashboard from './components/UserDashboard';
 
-
 const App = () => {
-
   return (
     <CartProvider>
       <Router>
