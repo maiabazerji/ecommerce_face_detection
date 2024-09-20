@@ -135,33 +135,18 @@ const Auth = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage(null);
     const data = new FormData();
-    data.append("username", formData.username);
+    if (!isLogin) data.append("username", formData.username);
     data.append("email", formData.email);
     data.append("password", formData.password);
-    if (formData.photo) {
-      data.append("photo", formData.photo);
-    }
-
+    if (!isLogin && formData.photo) data.append("photo", formData.photo);
     try {
       const response = isLogin
-        ? await axios.post("http://localhost:3000/login", { email: formData.email, password: formData.password })
-        : await axios.post("http://localhost:3000/signup", data, {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          });
-
-      console.log(`${isLogin ? "Login" : "Signup"} response:`, response.data);
-      setMessage(`${isLogin ? "Login" : "Signup"} successful!`);
-
-      if (isLogin) {
-        stopVideoStream();
-      }
+        ? await axios.post("/login", { email: formData.email, password: formData.password })
+        : await axios.post("/signup", data);
+      console.log(`${isLogin ? "Login" : "Signup"} successful:`, response.data);
     } catch (error) {
-      console.error(`${isLogin ? "Login" : "Signup"} error:`, error.response?.data || error.message);
-      setMessage(`${isLogin ? "Login" : "Signup"} failed: ${error.response?.data?.message || error.message}`);
+      console.error(`${isLogin ? "Login" : "Signup"} failed:`, error.response?.data || error.message);
     }
   };
 

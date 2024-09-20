@@ -1,5 +1,5 @@
-import React, { useContext } from 'react';
-import { useNavigate } from 'react-router-dom'; // Updated import
+import React, { useContext } from 'react'; 
+import { useNavigate } from 'react-router-dom'; 
 import { CartContext } from '../context/CartContext';
 
 const Cart = () => {
@@ -85,27 +85,31 @@ const Cart = () => {
                 <p>Your cart is empty</p>
             ) : (
                 <>
-                    {cart.map(item => (
-                        <div key={item._id} style={styles.cartItem}>
-                            <img src={item.image} alt={item.name} style={styles.cartItemImage} />
-                            <div style={styles.cartItemInfo}>
-                                <h4>{item.name}</h4>
-                                <p>Price: ${item.price.toFixed(2)}</p>
-                                <p>Quantity: {item.quantity}</p>
+                    {cart.map(item => {
+                        const totalPrice = item.price * item.quantity; // Calculate total price
+                        return (
+                            <div key={item._id} style={styles.cartItem}>
+                                <img src={item.image} alt={item.name} style={styles.cartItemImage} />
+                                <div style={styles.cartItemInfo}>
+                                    <h4>{item.name}</h4>
+                                    <p>Price per item: ${item.price.toFixed(2)}</p>
+                                    <p>Quantity: {item.quantity}</p>
+                                    <p>Total Price: ${totalPrice.toFixed(2)}</p> {/* Display total price */}
+                                </div>
+                                <div style={styles.cartItemButtons}>
+                                    <button style={styles.quantityButton} onClick={() => decreaseQuantity(item._id)}>
+                                        -
+                                    </button>
+                                    <button style={styles.quantityButton} onClick={() => increaseQuantity(item._id)}>
+                                        +
+                                    </button>
+                                    <button style={styles.button} onClick={() => removeFromCart(item._id)}>
+                                        Remove
+                                    </button>
+                                </div>
                             </div>
-                            <div style={styles.cartItemButtons}>
-                                <button style={styles.quantityButton} onClick={() => decreaseQuantity(item._id)}>
-                                    -
-                                </button>
-                                <button style={styles.quantityButton} onClick={() => increaseQuantity(item._id)}>
-                                    +
-                                </button>
-                                <button style={styles.button} onClick={() => removeFromCart(item._id)}>
-                                    Remove
-                                </button>
-                            </div>
-                        </div>
-                    ))} 
+                        );
+                    })} 
                     <br/>
                     <button style={styles.clearButton} onClick={clearCart}>
                         Clear Cart

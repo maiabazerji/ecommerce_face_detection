@@ -77,23 +77,15 @@ const Signup = () => {
     data.append("username", formData.username);
     data.append("email", formData.email);
     data.append("password", formData.password);
-    if (formData.photo) {
-      data.append("photo", formData.photo); // Append the photo to the FormData
-    }
-
+    if (formData.photo) data.append("photo", formData.photo);
     try {
-      const response = await axios.post("/signup", data, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      const response = await axios.post("/signup", data);
       console.log("Signup response:", response.data);
-      // Handle successful signup (e.g., redirect to login page, display success message)
     } catch (error) {
       console.error("Signup error:", error.response?.data || error.message);
-      // Handle signup error (e.g., display error message)
     }
   };
+  
 
   const handleCameraSignup = async () => {
     setIsCameraEnabled(true);
@@ -122,7 +114,7 @@ const Signup = () => {
 
   const sendImageToBackend = async (image) => {
     try {
-      const response = await fetch("YOUR_BACKEND_URL", {
+      const response = await fetch("http://127.0.0.1:5000/recognize", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

@@ -1,95 +1,80 @@
-import torch
-from facenet_pytorch import InceptionResnetV1
+from deepface import DeepFace
+import pymongo
 import numpy as np
-from pymongo import MongoClient
-from PIL import Image
-import io
-from sklearn.metrics.pairwise import cosine_similarity
-from torchvision import transforms
+import os
+import json
 
-# MongoDB Setup
-client = MongoClient('mongodb://localhost:27017/')
-db = client['ecommerce']  # Replace with your database name
-users_collection = db['users']  # Users collection
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # Disable GPU usage
+import tensorflow as tf
 
-# Function to convert image to tensor for model input
-def to_input(pil_rgb_image):
-    transform = transforms.Compose([
-        transforms.Resize((160, 160)),
-        transforms.ToTensor(),
-        transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
-    ])
-    return transform(pil_rgb_image).unsqueeze(0)  # Add batch dimension
 
-# Load the FaceNet model
-def load_pretrained_model():
-    model = InceptionResnetV1(pretrained='vggface2').eval()  # Pretrained on VGGFace2
-    return model
+import tensorflow as tf
+print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
 
-model = load_pretrained_model()
 
-# Convert binary image from MongoDB to PIL Image
-def binary_to_image(binary_img):
-    img = Image.open(io.BytesIO(binary_img))
-    return img
+# MongoDB Initialization
+try:
+    client = pymongo.MongoClient("mongodb://localhost:27017/")
+    db = client["ecommerce"]
+    collection = db["users"]
+    print("Connected to MongoDB")
+except pymongo.errors.ConnectionError as e:
+    print(f"Error connecting to MongoDB: {e}")
 
-# Get face embeddings
-def get_face_embedding(image):
-    tensor_input = to_input(image)
-    with torch.no_grad():
-        embedding = model(tensor_input)
-    return embedding.cpu().numpy()
+def get_face_embedding(image_path):
+    result = DeepFace.represent(img_path=image_path, model_name='VGG-Face')
+    embedding = result[0]['embedding']
+    print(f"Embedding type: {type(embedding)}")  # Check the type of embedding
+    return embedding
 
-# Signup (register new face)
-def signup(user_id):
-    user = users_collection.find_one({"_id": user_id})
-    if not user:
-        print(f"User {user_id} not found in database!")
-        return False
+def store_user_embedding(user_id, embedding):
+    # If embedding is a NumPy array, convert it to list; if it's already a list, use it directly
+    embedding_list = embedding if isinstance(embedding, list) else embedding.tolist()
+    # Store or update user ID and embedding in MongoDB
+    collection.update_one(
+        {"user_id": user_id},
+        {"$set": {"embedding": embedding_list}},
+        upsert=True
+    )
 
-    # Assuming image is stored as binary in MongoDB (adjust if needed)
-    if 'image' in user:
-        image = binary_to_image(user['image'])
+def retrieve_user_embedding(user_id):
+    user = collection.find_one({"user_id": user_id})
+    if user:
+        return np.array(user["embedding"])
+    return None
+
+def compare_embeddings(embedding1, embedding2, threshold=0.6):
+    similarity = np.dot(embedding1, embedding2) / (np.linalg.norm(embedding1) * np.linalg.norm(embedding2))
+    return similarity >= threshold
+
+def signup(user_id, image_path):
+    embedding = get_face_embedding(image_path)
+    if embedding is not None:
+        store_user_embedding(user_id, embedding)
+        print(f"User {user_id} signed up successfully.")
+
+def login(user_id, image_path):
+    embedding = get_face_embedding(image_path)
+    if embedding is None:
+        print("Error generating embedding for login.")
+        return
+    
+    stored_embedding = retrieve_user_embedding(user_id)
+    
+    if stored_embedding is not None:
+        is_match = compare_embeddings(embedding, stored_embedding)
+        if is_match:
+            print("Login successful")
+        else:
+            print("Login failed")
     else:
-        print(f"No image found for user {user_id}.")
-        return False
-
-    embedding = get_face_embedding(image)
-    
-    # Store embedding back to MongoDB
-    users_collection.update_one({"_id": user_id}, {"$set": {"face_embedding": embedding.tolist()}})
-    
-    print(f"User {user_id} registered successfully.")
-    return True
-
-# Login (authenticate face)
-def login(user_id, image_path, threshold=0.6):
-    user = users_collection.find_one({"_id": user_id})
-    if not user or 'face_embedding' not in user:
-        print(f"User {user_id} not found or not registered with a face!")
-        return False
-
-    stored_embedding = np.array(user['face_embedding'])
-    
-    # Load the input image for comparison
-    input_image = Image.open(image_path)  # Replace with an image file path
-    input_embedding = get_face_embedding(input_image)
-
-    # Compute cosine similarity between stored embedding and input embedding
-    similarity = cosine_similarity(input_embedding, stored_embedding)
-    print(f"Similarity score: {similarity}")
-
-    if similarity >= threshold:
-        print("Login successful!")
-        return True
-    else:
-        print("Login failed. Face does not match.")
-        return False
+        print("User not found")
 
 # Example usage
-if __name__ == '__main__':
-    # User signup (fetch image from MongoDB)
-    signup('user1')  # Replace 'user1' with a valid user ID from MongoDB
-    
-    # User login (compare with new face image)
-    login('user1', 'test_images/user1.jpg')  # Provide path to the image for login
+# signup_user_id = 'user123'
+# signup_image_path = 'photo.jpg'
+# signup(signup_user_id, signup_image_path)
+
+# login_user_id = 'user123'
+# login_image_path = 'photo.jpg'
+# login(login_user_id, login_image_path)

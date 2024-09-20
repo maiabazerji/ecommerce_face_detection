@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import styled from "styled-components";
+import axios from 'axios';
+
 
 // Styled Components
 const FormContainer = styled.div`
@@ -68,13 +70,31 @@ const Login = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Login data:", formData);
-    // Handle login logic
+  
+    try {
+      // Send the login request to your backend
+      const response = await axios.post("/login", {
+        email: formData.email,
+        password: formData.password,
+      });
 
+      console.log("Login response:", response.data);
+  
+      // Handle successful login
+      if (response.data.success) {
+        window.location.href = "/UserDashboard";
+      } else {
+        // Handle the case where login fails
+        console.error("Login failed:", response.data.message);
+      }
+    } catch (error) {
+      // Handle any errors (network issues, backend errors, etc.)
+      console.error("Login error:", error.response?.data || error.message);
+    }
   };
-
+  
   const handleCameraLogin = async () => {
     setIsCameraEnabled(true);
     const video = document.getElementById("video");
