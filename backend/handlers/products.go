@@ -18,3 +18,5 @@ func GetProductsHandler(w http.ResponseWriter, r *http.Request) {
     products := []Product{} // Replace with actual DB fetch logic
     json.NewEncoder(w).Encode(products)
 }
+//insert data into database
+

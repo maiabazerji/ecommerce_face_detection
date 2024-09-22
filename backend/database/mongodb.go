@@ -7,12 +7,13 @@ import (
     "log"
 
 
+
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var (
-    UserCollection *mongo.Collection
+    UserCollection *mongo.Collection 
 )
 
 func init() {
@@ -24,4 +25,6 @@ func init() {
 
     UserCollection = client.Database("ecommerce").Collection("users")
 }
+
+
    

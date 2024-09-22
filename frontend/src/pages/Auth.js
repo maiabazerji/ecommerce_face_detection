@@ -135,18 +135,25 @@ const Auth = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const data = new FormData();
-    if (!isLogin) data.append("username", formData.username);
-    data.append("email", formData.email);
-    data.append("password", formData.password);
-    if (!isLogin && formData.photo) data.append("photo", formData.photo);
+    
+    // Create FormData for signup, and normal JSON for login
+    const data = isLogin ? { email: formData.email, password: formData.password } : new FormData();
+    if (!isLogin) {
+      data.append("username", formData.username);
+      data.append("email", formData.email);
+      data.append("password", formData.password);
+      if (formData.photo) {
+        data.append("photo", formData.photo);
+      }
+    }
+    
     try {
       const response = isLogin
-        ? await axios.post("/login", { email: formData.email, password: formData.password })
+        ? await axios.post("/login", data)
         : await axios.post("/signup", data);
-      console.log(`${isLogin ? "Login" : "Signup"} successful:`, response.data);
+      setMessage(`${isLogin ? "Login" : "Signup"} successful: ${response.data.message}`);
     } catch (error) {
-      console.error(`${isLogin ? "Login" : "Signup"} failed:`, error.response?.data || error.message);
+      setMessage(`${isLogin ? "Login" : "Signup"} failed: ${error.response?.data?.message || error.message}`);
     }
   };
 
@@ -169,10 +176,9 @@ const Auth = () => {
     const image = canvas.toDataURL("image/png");
 
     try {
-      const response = await axios.post("http://localhost:3000/login", { image });
-      console.log("Face recognition result:", response.data);
+      const response = await axios.post("/login", { image });
+      setMessage(`Face recognition successful: ${response.data.message}`);
     } catch (error) {
-      console.error("Face recognition error:", error.response?.data || error.message);
       setMessage(`Face recognition failed: ${error.response?.data?.message || error.message}`);
     }
   };
@@ -210,32 +216,21 @@ const Auth = () => {
         {!isLogin && (
           <>
             <label htmlFor="photo">Upload your photo for facial recognition login:</label>
-            <CameraButton type="button" onClick={handleCameraLogin}>
-              <FontAwesomeIcon icon={faCamera} />
-              Signup by Camera
-            </CameraButton>
-            <Video id="video" autoPlay $isCameraEnabled={isCameraEnabled} />
-            {isCameraEnabled && (
-              <Button type="button" onClick={captureImage}>
-                Capture Image
-              </Button>
-            )}
+            <Input type="file" name="photo" accept="image/*" onChange={handleChange} />
           </>
         )}
+        <Button type="submit">{isLogin ? "Login" : "Sign Up"}</Button>
         {isLogin && (
-          <>
-            <Button type="submit">Login</Button>
-            <CameraButton type="button" onClick={handleCameraLogin}>
-              <FontAwesomeIcon icon={faCamera} />
-              Login by Camera
-            </CameraButton>
-            <Video id="video" autoPlay $isCameraEnabled={isCameraEnabled} />
-            {isCameraEnabled && (
-              <Button type="button" onClick={captureImage}>
-                Capture Image
-              </Button>
-            )}
-          </>
+          <CameraButton type="button" onClick={handleCameraLogin}>
+            <FontAwesomeIcon icon={faCamera} />
+            Login by Camera
+          </CameraButton>
+        )}
+        <Video id="video" autoPlay $isCameraEnabled={isCameraEnabled} />
+        {isCameraEnabled && (
+          <Button type="button" onClick={captureImage}>
+            Capture Image
+          </Button>
         )}
       </Form>
       {message && <p>{message}</p>}
