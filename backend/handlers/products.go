@@ -4,7 +4,7 @@ package handlers
 import (
     "encoding/json"
     "net/http"
-    "ecommerce_face_detection/backend/database"
+
 )
 
 type Product struct {

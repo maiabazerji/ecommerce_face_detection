@@ -1,5 +1,4 @@
-// backend/handlers/user.go
-package handlers
+package models
 
 import (
     "encoding/json"

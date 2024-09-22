@@ -1,18 +1,17 @@
 package handlers
 
 import (
-	"context"
-	"encoding/json"
-	"net/http"
-
-	"go.mongodb.org/mongo-driver/bson"
-	"golang.org/x/crypto/bcrypt"
-
-	"/database"
-	"/models"
+    "backend/models" 
+    "backend/database"
+    "context"
+    "encoding/json"
+    "net/http"
+    "go.mongodb.org/mongo-driver/bson"
+    "golang.org/x/crypto/bcrypt"
 )
 
-func loginHandler(w http.ResponseWriter, r *http.Request) {
+// Exported function for login
+func LoginHandler(w http.ResponseWriter, r *http.Request) {
     if r.Method != http.MethodPost {
         http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
         return
@@ -35,7 +34,8 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
     json.NewEncoder(w).Encode(map[string]bool{"success": true})
 }
 
-func signupHandler(w http.ResponseWriter, r *http.Request) {
+// Exported function for signup
+func SignupHandler(w http.ResponseWriter, r *http.Request) {
     if r.Method != http.MethodPost {
         http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
         return
