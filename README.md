@@ -18,7 +18,6 @@ This project is an e-commerce platform that implements face recognition for user
 
 ## Installation
 - Go (version 1.16 or higher)
-- Node.js (version 14 or higher)
 - MongoDB (local installation)
 - Python (version 3.7 or higher)
 - Required Python libraries:
