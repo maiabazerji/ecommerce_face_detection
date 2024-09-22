@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import styled from "styled-components";
 import axios from 'axios';
 
-
 // Styled Components
 const FormContainer = styled.div`
   text-align: center;
@@ -50,15 +49,14 @@ const Button = styled.button`
 `;
 
 const Video = styled.video`
-  display: none;
+  display: ${({ isCameraEnabled }) => (isCameraEnabled ? "block" : "none")};
   margin-top: 20px;
-
-
 `;
 
+// Login Component
 const Login = () => {
   const [formData, setFormData] = useState({
-    username: "",
+    email: "",
     password: ""
   });
 
@@ -96,14 +94,19 @@ const Login = () => {
   };
   
   const handleCameraLogin = async () => {
-    setIsCameraEnabled(true);
-    const video = document.getElementById("video");
+    try {
+      setIsCameraEnabled(true);
+      const video = document.getElementById("video");
 
-    if (!videoStream) {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
-      video.srcObject = stream;
-      setVideoStream(stream);
-      video.play();
+      if (!videoStream) {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        setVideoStream(stream);
+        video.play();
+      }
+    } catch (error) {
+      console.error("Error accessing the camera:", error);
+      alert("Please grant camera access.");
     }
   };
 
@@ -114,20 +117,23 @@ const Login = () => {
     canvas.height = video.videoHeight;
     const context = canvas.getContext("2d");
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const image = canvas.toDataURL("image/png", "image/jpeg");
+    const image = canvas.toDataURL("image/png");
 
-    // Send image to backend
-    const response = await fetch("YOUR_BACKEND_URL", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ image })
-    });
+    try {
+      // Send image to backend
+      const response = await fetch("YOUR_BACKEND_URL", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ image })
+      });
 
-    const result = await response.json();
-    console.log("Face recognition result:", result);
-
+      const result = await response.json();
+      console.log("Face recognition result:", result);
+    } catch (error) {
+      console.error("Face recognition error:", error);
+    }
   };
 
   return (
@@ -154,7 +160,7 @@ const Login = () => {
         <Button type="button" onClick={handleCameraLogin}>Login by Camera</Button>
         {isCameraEnabled && (
           <>
-            <Video id="video" width="720" height="560" autoPlay></Video>
+            <Video id="video" width="720" height="560" autoPlay isCameraEnabled={isCameraEnabled} />
             <Button type="button" onClick={captureImage}>Capture Image</Button>
           </>
         )}

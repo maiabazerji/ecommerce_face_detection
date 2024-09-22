@@ -86,7 +86,7 @@ const UserDashboard = () => {
           Here, you can manage your account, view your order history, and explore personalized product recommendations based on your preferences.
         </p>
       </AdditionalContent>
-      <ButtonLink to="/account">Manage Account</ButtonLink>
+      {/* <ButtonLink to="/account">Manage Account</ButtonLink> */}
       <ButtonLink to="/products">View Products</ButtonLink>
       <ButtonLink to="/cart">Order History</ButtonLink>
     </DashboardContainer>

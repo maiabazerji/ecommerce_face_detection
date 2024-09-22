@@ -2,7 +2,6 @@ package models
 
 import (
     "go.mongodb.org/mongo-driver/bson/primitive"
-    "go.mongodb.org/mongo-driver/mongo"
 )
 
 type Product struct {
@@ -11,12 +10,9 @@ type Product struct {
     Brand         string             `json:"brand" bson:"brand"`
     Price         float64            `json:"price" bson:"price"`
     Category      string             `json:"category" bson:"category"`
+    Quantity       int                `json:"quantity" bson:"quantity"`
     Rating        float64            `json:"rating" bson:"rating"`
     NumReviews    int                `json:"numReviews" bson:"numReviews"`
     CountInStock  int                `json:"countInStock" bson:"countInStock"`
     ImageURL    string               `bson:"image_url" json:"image_url"`
-}
-
-func GetProductCollection(client *mongo.Client) *mongo.Collection {
-    return client.Database("ecommerce").Collection("products")
 }
