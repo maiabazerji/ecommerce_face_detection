@@ -1,8 +1,11 @@
+// backend/database/database.go
 package database
 
 import (
     "context"
     "log"
+    "os"
+
     "go.mongodb.org/mongo-driver/mongo"
     "go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -10,10 +13,7 @@ import (
 var ProductCollection *mongo.Collection
 
 func ConnectDB() {
-    clientOptions := options.Client().ApplyURI("MONGODB_URI")
-    // clientOptions := options.Client().ApplyURI("mongodb://localhost:27017").SetTLSConfig(&tls.Config{InsecureSkipVerify: true}) 
-    // clientOptions := options.Client().ApplyURI("mongodb://localhost:27017").SetTLSConfig(&tls.Config{})
-    // clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
+    clientOptions := options.Client().ApplyURI(os.Getenv("MONGODB_URI"))
     client, err := mongo.Connect(context.TODO(), clientOptions)
     if err != nil {
         log.Fatal(err)

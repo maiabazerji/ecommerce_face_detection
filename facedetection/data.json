@@ -4,13 +4,8 @@
         "user_id": "user001",
         "name": "Alice Smith",
         "email": "alice.smith@example.com",
-        "photo_path": "path/to/alice_photo.jpg"
-      },
-      {
-        "user_id": "user002",
-        "name": "Bob Johnson",
-        "email": "bob.johnson@example.com",
-        "photo_path": "path/to/bob_photo.jpg"
+        "password": "password123",
+        "photo_path": "photo.jpg"
       }
     ],
     "photos": [
@@ -19,12 +14,6 @@
         "user_id": "user001",
         "photo_path": "path/to/alice_photo.jpg",
         "timestamp": "2024-09-18T18:00:00Z"
-      },
-      {
-        "photo_id": "photo002",
-        "user_id": "user002",
-        "photo_path": "path/to/bob_photo.jpg",
-        "timestamp": "2024-09-18T18:01:00Z"
       }
     ]
 }
