@@ -1,16 +1,19 @@
 package handlers
 
 import (
-    "backend/models" 
-    "backend/database"
+    "backend/models"
     "context"
     "encoding/json"
     "net/http"
     "go.mongodb.org/mongo-driver/bson"
+    "go.mongodb.org/mongo-driver/mongo"
     "golang.org/x/crypto/bcrypt"
 )
 
-// Exported function for login
+// Reference to the user collection (to be set externally)
+var UserCollection *mongo.Collection
+
+// LoginHandler handles user login requests
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
     if r.Method != http.MethodPost {
         http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
@@ -24,17 +27,19 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
     }
 
     var foundUser models.User
-    err := database.UserCollection.FindOne(context.TODO(), bson.M{"email": user.Email}).Decode(&foundUser)
+    // Find user by email in the database
+    err := UserCollection.FindOne(context.TODO(), bson.M{"email": user.Email}).Decode(&foundUser)
     if err != nil || bcrypt.CompareHashAndPassword([]byte(foundUser.Password), []byte(user.Password)) != nil {
         http.Error(w, "Invalid credentials", http.StatusUnauthorized)
         return
     }
 
+    // Login successful
     w.WriteHeader(http.StatusOK)
     json.NewEncoder(w).Encode(map[string]bool{"success": true})
 }
 
-// Exported function for signup
+// SignupHandler handles user registration requests
 func SignupHandler(w http.ResponseWriter, r *http.Request) {
     if r.Method != http.MethodPost {
         http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
@@ -55,12 +60,14 @@ func SignupHandler(w http.ResponseWriter, r *http.Request) {
     }
     user.Password = string(hashedPassword)
 
-    _, err = database.UserCollection.InsertOne(context.TODO(), user)
+    // Insert new user into the database
+    _, err = UserCollection.InsertOne(context.TODO(), user)
     if err != nil {
         http.Error(w, "Failed to create user", http.StatusInternalServerError)
         return
     }
 
+    // Signup successful
     w.WriteHeader(http.StatusCreated)
     json.NewEncoder(w).Encode(map[string]bool{"success": true})
 }

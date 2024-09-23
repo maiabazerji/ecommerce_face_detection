@@ -18,7 +18,7 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-app.include_router(face_recognition_router)
+app.include_router(face_recognition_router) 
 
 if __name__ == "__main__": 
     uvicorn.run(app, host="0.0.0.0", port=8000)
