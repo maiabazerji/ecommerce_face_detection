@@ -16,6 +16,9 @@ This project is an e-commerce platform that implements face recognition for user
 - Face Recognition: Python with DeepFace
 - Deployment: Local
 
+## Quick Start
+
+
 ## Installation
 - Go (version 1.16 or higher)
 - MongoDB (local installation)
