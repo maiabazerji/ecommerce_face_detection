@@ -4,11 +4,11 @@ go 1.22.2
 
 require go.mongodb.org/mongo-driver v1.17.0
 
-require github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
+require github.com/dgrijalva/jwt-go v3.2.0+incompatible 
 
 require (
 	github.com/golang/snappy v0.0.4 // indirect
-	github.com/gorilla/mux v1.8.1 // indirect
+	github.com/gorilla/mux v1.8.1 
 	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/montanaflynn/stats v0.7.1 // indirect
 	github.com/rs/cors v1.11.1

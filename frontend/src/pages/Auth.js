@@ -176,7 +176,7 @@ const Auth = () => {
     const image = canvas.toDataURL("image/png");
 
     try {
-      const response = await axios.post("/login", { image });
+      const response = await axios.post("http://localhost:5000/login", { image });
       setMessage(`Face recognition successful: ${response.data.message}`);
     } catch (error) {
       setMessage(`Face recognition failed: ${error.response?.data?.message || error.message}`);

@@ -19,12 +19,12 @@ class FaceRecognition:
         self.similarity_threshold = 0.6
 
     def get_face_embedding(self, image_path) -> np.array:
-        result: List[Dict[str, Any]] = DeepFace.represent(
+        embedding: List[float] = DeepFace.represent(
             img_path=image_path,
             model_name=self.model_name
         )
-        embedding: List[float] = result[0]['embedding']
-        embedding = np.array(embedding)
+        # embedding: List[float] = result
+        # embedding = np.array(embedding)
         return embedding
 
     def store_user_embedding(self, user_id, embedding) -> Tuple[bool, str]:
@@ -42,20 +42,25 @@ class FaceRecognition:
                 upsert=True
             )
             logger.info(f"User {user_id} signed up successfully.")
-            return True, f"User {user_id} signed up successfully."
+            return True
         except Exception as e:
             logger.error(f"Error storing user embedding: {e}")
-            return False, f"Error storing user embedding: {e}"
+            return False
 
     def signup(self, user_id: str, image_path: str) -> Dict[bool, str]:
         embedding: List[float] = self.get_face_embedding(image_path)
-        self.store_user_embedding(user_id, embedding)
+        is_indexed = self.store_user_embedding(user_id, embedding)
+        if not is_indexed:
+            return {
+                "status": False,
+                "message": "Error signing up user"
+            }
         return {
             "status": True,
             "message": f"User {user_id} signed up successfully."
         }
 
-    def retrieve_user_embedding(self, user_id) -> np.ndarray:
+    def retrieve_user_embedding(self, user_id) -> List[float]:
         user_mongo_obj = self.collection.find_one(
             {
                 "user_id": user_id
@@ -66,18 +71,20 @@ class FaceRecognition:
             }
         )
         if user_mongo_obj:
-            return np.array(user_mongo_obj["embedding"])
+            return user_mongo_obj["embedding"]
         else:
-            return np.array([])
+            return []
 
     @staticmethod
     def embedding_similarity(embedding1, embedding2) -> float:
+        embedding1 = np.array(embedding1)
+        embedding2 = np.array(embedding2) 
         similarity_score = np.dot(embedding1, embedding2) / (np.linalg.norm(embedding1) * np.linalg.norm(embedding2))
         return similarity_score
 
     def login(self, user_id: str, image_path: str) -> Dict[bool, str]:
-        input_embedding: np.array = self.get_face_embedding(image_path)
-        stored_embedding: np.array = self.retrieve_user_embedding(user_id)
+        input_embedding: List[float] = self.get_face_embedding(image_path)
+        stored_embedding: List[float] = self.retrieve_user_embedding(user_id)
 
         if len(stored_embedding) == 0:
             return {

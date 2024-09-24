@@ -42,20 +42,19 @@ const Button = styled.button`
   border-radius: 5px;
   font-size: 1rem;
   cursor: pointer;
+  margin-bottom: 10px;
 `;
 
 const Video = styled.video`
-  display: none;
   margin-top: 20px;
 `;
-
 
 const Signup = () => {
   const [formData, setFormData] = useState({
     username: "",
     email: "",
     password: "",
-    photo: null, 
+    photo: null,
   });
 
   const [isCameraEnabled, setIsCameraEnabled] = useState(false);
@@ -64,7 +63,6 @@ const Signup = () => {
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     if (name === "photo") {
-      // Handle file input separately
       setFormData({ ...formData, photo: files[0] });
     } else {
       setFormData({ ...formData, [name]: value });
@@ -78,24 +76,28 @@ const Signup = () => {
     data.append("email", formData.email);
     data.append("password", formData.password);
     if (formData.photo) data.append("photo", formData.photo);
+
     try {
-      const response = await axios.post("/signup", data);
+      const response = await axios.post("http://localhost:8000/api/signup", data); // Use full backend URL
       console.log("Signup response:", response.data);
     } catch (error) {
       console.error("Signup error:", error.response?.data || error.message);
     }
   };
-  
 
   const handleCameraSignup = async () => {
     setIsCameraEnabled(true);
     const video = document.getElementById("video");
 
     if (!videoStream) {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
-      video.srcObject = stream;
-      setVideoStream(stream);
-      video.play();
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        setVideoStream(stream);
+        video.play();
+      } catch (error) {
+        console.error("Error accessing camera:", error);
+      }
     }
   };
 
@@ -106,24 +108,19 @@ const Signup = () => {
     canvas.height = video.videoHeight;
     const context = canvas.getContext("2d");
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const image = canvas.toDataURL("image/png", "image/jpeg");
-    
+
+    const image = canvas.toDataURL("image/png");
+
     // Send image to backend
     await sendImageToBackend(image);
   };
 
   const sendImageToBackend = async (image) => {
     try {
-      const response = await fetch("http://127.0.0.1:5000/recognize", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ image })
+      const response = await axios.post("http://localhost:8000/api/signup", {
+        image,
       });
-
-      const result = await response.json();
-      console.log("Face recognition result:", result);
+      console.log("Face recognition result:", response.data);
     } catch (error) {
       console.error("Error sending image to backend:", error);
     }
@@ -164,7 +161,9 @@ const Signup = () => {
         {isCameraEnabled && (
           <>
             <Video id="video" width="720" height="560" autoPlay></Video>
-            <Button type="button" onClick={captureImage}>Capture Image</Button>
+            <Button type="button" onClick={captureImage}>
+              Capture Image
+            </Button>
           </>
         )}
       </Form>

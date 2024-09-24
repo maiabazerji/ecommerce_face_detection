@@ -38,8 +38,8 @@ func main() {
     http.HandleFunc("/signup", handlers.SignupHandler)
 
     // Start Server
-    log.Println("Server running on port 5000")
-    if err := http.ListenAndServe(":5000", router); err != nil {
+    log.Println("Server running on port 8000")
+    if err := http.ListenAndServe(":8000", router); err != nil {
         log.Fatal(err)
     }
 }
