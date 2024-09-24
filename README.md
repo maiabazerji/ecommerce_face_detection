@@ -13,7 +13,7 @@ This project is an e-commerce platform that implements face recognition for user
 - **Frontend:** React.js
 - **Backend:** Golang
 - **Database:** MongoDB
-- **Face Recognition:** Python with DeepFace
+- **Face Recognition:** Python with DeepFace (Facenet512 model)
 - **Deployment:** Local
 
 ## Quick Start
