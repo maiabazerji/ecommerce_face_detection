@@ -5,7 +5,8 @@ from core.face_recognition.schemas import SignupRequest, SignupResponse, LoginRe
 
 router = APIRouter(prefix="/face_rec", tags=["face_recognition"])
 
-model_name = "VGG-Face"
+# model_name = "VGG-Face"
+model_name = "Facenet512"
 pipeline = FaceRecognition(model_name)
 
 

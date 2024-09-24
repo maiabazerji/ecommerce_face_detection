@@ -73,7 +73,7 @@ const Login = () => {
   
     try {
       // Send the login request to your backend
-      const response = await axios.post("/login", {
+      const response = await axios.post("http://localhost:8000/api/login", {
         email: formData.email,
         password: formData.password,
       });
@@ -121,7 +121,7 @@ const Login = () => {
 
     try {
       // Send image to backend
-      const response = await fetch("YOUR_BACKEND_URL", {
+      const response = await fetch("/api/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
