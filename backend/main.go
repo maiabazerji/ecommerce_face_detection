@@ -1,45 +1,34 @@
-// backend/main.go
 package main
 
 import (
-	"backend/handlers"
-	"backend/routes"
-	"context"
 	"log"
-	"net/http"
-	"time" 
-    "backend/config"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"backend/database"
+	"backend/routes"
+
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
-    // Initialize Database
-    config.ConnectDB()
+	// Initialize MongoDB connection
+	err := database.InitMongoDB("mongodb://localhost:27017")
+	if err != nil {
+		log.Fatalf("Failed to connect to MongoDB: %v", err)
+	}
 
-    // Initialize Routes
-    router := routes.InitializeRoutes()
-    // Set the user collection in the handlers package
-    clientOptions := options.Client().ApplyURI("mongodb://localhost:27017") // Adjust as necessary
-    client, err := mongo.NewClient(clientOptions)
-    if err != nil {
-        log.Fatal(err)
-    }
-    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-    defer cancel()
+	// Set up the router
+	router := gin.Default()
 
-    err = client.Connect(ctx)
-    if err != nil {
-        log.Fatal(err)
-    }
-    handlers.UserCollection = client.Database("ecommerce").Collection("users")
-    // Register handlers
-    http.HandleFunc("/login", handlers.LoginHandler)
-    http.HandleFunc("/signup", handlers.SignupHandler)
+	// Enable CORS middleware
+	router.Use(cors.Default())
 
-    // Start Server
-    log.Println("Server running on port 8000")
-    if err := http.ListenAndServe(":8000", router); err != nil {
-        log.Fatal(err)
-    }
+	// Routes
+	routes.UserRoutes(router)
+	routes.ProductRoutes(router)
+	for _, route := range router.Routes() {
+		log.Printf("Method: %s, Path: %s\n", route.Method, route.Path)
+	}
+
+	// Start the server on port 8080
+	router.Run(":8080")
 }

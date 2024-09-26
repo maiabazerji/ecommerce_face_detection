@@ -16,3 +16,18 @@ type Product struct {
     CountInStock  int                `json:"countInStock" bson:"countInStock"`
     ImageURL    string               `bson:"image_url" json:"image_url"`
 }
+
+func GetAllProducts() ([]Product, error) {
+    // Fetch all products from MongoDB
+    // ...
+    var products []Product
+    
+    return products, nil
+}
+
+func GetProductById(id string) (Product, error) {
+	// Fetch a product by ID from MongoDB
+    // ...
+    var product Product
+    return product, nil
+}

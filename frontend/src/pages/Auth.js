@@ -135,7 +135,7 @@ const Auth = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Create FormData for signup, and normal JSON for login
     const data = isLogin ? { email: formData.email, password: formData.password } : new FormData();
     if (!isLogin) {
@@ -146,7 +146,7 @@ const Auth = () => {
         data.append("photo", formData.photo);
       }
     }
-    
+
     try {
       const response = isLogin
         ? await axios.post("/login", data)
