@@ -1,33 +1,43 @@
 package models
 
 import (
-    "go.mongodb.org/mongo-driver/bson/primitive"
+
+	"gorm.io/gorm" 
 )
 
 type Product struct {
-    ID            primitive.ObjectID `json:"id" bson:"_id"`
-    Name          string             `json:"name" bson:"name"`
-    Brand         string             `json:"brand" bson:"brand"`
-    Price         float64            `json:"price" bson:"price"`
-    Category      string             `json:"category" bson:"category"`
-    Quantity       int                `json:"quantity" bson:"quantity"`
-    Rating        float64            `json:"rating" bson:"rating"`
-    NumReviews    int                `json:"numReviews" bson:"numReviews"`
-    CountInStock  int                `json:"countInStock" bson:"countInStock"`
-    ImageURL    string               `bson:"image_url" json:"image_url"`
+	ID           uint    `gorm:"primaryKey;autoIncrement" json:"id"`
+	Name         string  `gorm:"size:255;not null" json:"name"`
+	Brand        string  `gorm:"size:255;not null" json:"brand"`
+	Price        float64 `gorm:"not null" json:"price"`
+	Category     string  `gorm:"size:255;not null" json:"category"`
+	Quantity     int     `gorm:"not null" json:"quantity"`
+	Rating       float64 `json:"rating"`
+	NumReviews   int     `json:"numReviews"`
+	CountInStock int     `json:"countInStock"`
+	ImageURL     string  `gorm:"size:255" json:"image_url"`
 }
 
-func GetAllProducts() ([]Product, error) {
-    // Fetch all products from MongoDB
-    // ...
-    var products []Product
-    
-    return products, nil
+// Save inserts or updates the product in the database
+func (p *Product) Save(db *gorm.DB) error {
+	return db.Save(p).Error
 }
 
-func GetProductById(id string) (Product, error) {
-	// Fetch a product by ID from MongoDB
-    // ...
-    var product Product
-    return product, nil
+// GetAllProducts fetches all products from the database
+func GetAllProducts(db *gorm.DB) ([]Product, error) {
+	var products []Product
+	result := db.Find(&products)
+	return products, result.Error
+}
+
+// GetProductById fetches a product by its ID from the database
+func GetProductById(db *gorm.DB, id uint) (Product, error) {
+	var product Product
+	result := db.First(&product, id)
+	return product, result.Error
+}
+
+// DeleteProduct removes a product by its ID
+func DeleteProduct(db *gorm.DB, id uint) error {
+	return db.Delete(&Product{}, id).Error
 }

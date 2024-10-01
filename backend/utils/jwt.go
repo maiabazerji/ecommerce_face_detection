@@ -1,22 +1,33 @@
 package utils
 
 import (
+	"errors"
+	"strings"
 	"time"
+
 	"github.com/dgrijalva/jwt-go"
 )
 
-var jwtKey = []byte("my_secret_key")
-
-func GenerateJWT(userID string) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"userID": userID,
-		"exp":    time.Now().Add(time.Hour * 72).Unix(),
-	})
-	return token.SignedString(jwtKey)
+func GenerateJWT(secret string, username string) (string, error) {
+	claims := jwt.MapClaims{
+		"username": username,
+		"exp":      time.Now().Add(time.Hour * 24).Unix(),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(secret))
 }
+// ValidateJWT validates the JWT token and returns an error if it's invalid
 
-func ValidateJWT(tokenString string) bool {
-	// Validate token
-	// ...
-	return true
+func ValidateJWT(token string) (bool, error) {
+
+    if strings.TrimSpace(token) == "" {
+
+        return false, errors.New("invalid token")
+
+    }
+
+    // Add your JWT validation logic here
+
+    return true, nil
+
 }

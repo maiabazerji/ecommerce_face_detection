@@ -1,26 +1,25 @@
 package controllers
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
+	"github.com/gin-gonic/gin"
 	"backend/models"
 )
 
-func GetProducts(c *gin.Context) {
-	products, err := models.GetAllProducts()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not fetch products"})
+func CreateProduct(c *gin.Context) {
+	var product models.Product
+	if err := c.ShouldBindJSON(&product); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, products)
+
+	// Save product to the database (implement database logic)
+
+	c.JSON(http.StatusCreated, gin.H{"message": "Product created successfully"})
 }
 
-func GetProduct(c *gin.Context) {
-	id := c.Param("id")
-	product, err := models.GetProductById(id)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Product not found"})
-		return
-	}
-	c.JSON(http.StatusOK, product)
+func GetProducts(c *gin.Context) {
+	// Fetch products from the database (implement database logic)
+	var products []models.Product
+	c.JSON(http.StatusOK, products)
 }

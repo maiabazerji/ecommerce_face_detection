@@ -4,6 +4,7 @@ import (
     "backend/models"
     "context"
     "encoding/json"
+    "log"
     "net/http"
     "go.mongodb.org/mongo-driver/bson"
     "go.mongodb.org/mongo-driver/mongo"
@@ -22,21 +23,25 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
     var user models.User
     if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-        http.Error(w, "Bad request", http.StatusBadRequest)
+        http.Error(w, "Bad request: "+err.Error(), http.StatusBadRequest)
         return
     }
 
     var foundUser models.User
-    // Find user by email in the database
     err := UserCollection.FindOne(context.TODO(), bson.M{"email": user.Email}).Decode(&foundUser)
-    if err != nil || bcrypt.CompareHashAndPassword([]byte(foundUser.Password), []byte(user.Password)) != nil {
+    if err != nil {
         http.Error(w, "Invalid credentials", http.StatusUnauthorized)
         return
     }
 
-    // Login successful
+    // Uncomment to validate the password
+    if err := bcrypt.CompareHashAndPassword([]byte(foundUser.Password), []byte(user.Password)); err != nil {
+        http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+        return
+    }
+
     w.WriteHeader(http.StatusOK)
-    json.NewEncoder(w).Encode(map[string]bool{"success": true})
+    json.NewEncoder(w).Encode(map[string]string{"message": "Login successful"})
 }
 
 // SignupHandler handles user registration requests
@@ -48,26 +53,36 @@ func SignupHandler(w http.ResponseWriter, r *http.Request) {
 
     var user models.User
     if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-        http.Error(w, "Bad request", http.StatusBadRequest)
+        http.Error(w, "Bad request: "+err.Error(), http.StatusBadRequest)
+        return
+    }
+
+    // Check if email already exists
+    var existingUser models.User
+    err := UserCollection.FindOne(context.TODO(), bson.M{"email": user.Email}).Decode(&existingUser)
+    if err == nil { // User exists
+        http.Error(w, "Email already exists", http.StatusConflict)
         return
     }
 
     // Hash the password
     hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
     if err != nil {
-        http.Error(w, "Failed to hash password", http.StatusInternalServerError)
+        http.Error(w, "Failed to hash password: "+err.Error(), http.StatusInternalServerError)
         return
     }
     user.Password = string(hashedPassword)
 
+    // Log the user being inserted
+    log.Printf("Inserting user: %+v", user)
+
     // Insert new user into the database
     _, err = UserCollection.InsertOne(context.TODO(), user)
     if err != nil {
-        http.Error(w, "Failed to create user", http.StatusInternalServerError)
+        http.Error(w, "Failed to create user: "+err.Error(), http.StatusInternalServerError)
         return
     }
 
-    // Signup successful
     w.WriteHeader(http.StatusCreated)
     json.NewEncoder(w).Encode(map[string]bool{"success": true})
 }

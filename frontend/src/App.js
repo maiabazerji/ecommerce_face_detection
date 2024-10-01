@@ -14,6 +14,7 @@ import Cart from "./pages/Cart";
 import { CartProvider } from "./context/CartContext"; 
 import AdminDashboard from './components/AdminDashboard';
 import UserDashboard from './components/UserDashboard';
+import Recommendations from './components/recommendations';
 
 const App = () => {
   // Add state to store backend response
@@ -46,6 +47,7 @@ const App = () => {
           <Route path="/cart" element={<Cart />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/user-dashboard" element={<UserDashboard />} />
+          <Route path="/recommendations" element={<Recommendations />} />
         </Routes>
       </Router>
     </CartProvider>

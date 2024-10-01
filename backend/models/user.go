@@ -1,47 +1,65 @@
-// backend/models/user.go
 package models
 
 import (
 	"backend/utils"
-	"context" 
+	"encoding/json"
 	"time"
 
-    "backend/database" 
-
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"gorm.io/gorm"
 )
 
 type User struct {
-    ID           primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
-    Username     string             `bson:"username" json:"username"`
-    Email        string             `bson:"email" json:"email"`
-    Password     string             `bson:"password" json:"-"`
-    PhotoURL     string             `bson:"photo_url" json:"photo_url,omitempty"`
-    FaceEncoding string             `bson:"face_encoding" json:"face_encoding,omitempty"`
-    CreatedAt    time.Time          `bson:"created_at" json:"created_at"`
+    ID           uint      `gorm:"primaryKey" json:"id,omitempty"`
+    Username     string    `json:"username"`
+    PhotoURL     string    `json:"photo_url,omitempty"`
+    FaceEncoding string    `json:"face_encoding,omitempty"`
+    CreatedAt    time.Time `json:"created_at"`
+    Email        string    `gorm:"size:255;unique;not null" json:"email"`
+    Password     string    `gorm:"size:255;not null" json:"-"` // Password should be hashed
+    JWTToken     string    `gorm:"size:500" json:"jwt_token,omitempty"`
+    Preferences  string    `json:"preferences,omitempty" gorm:"type:json"` // Store as JSON string
 }
 
-func (u *User) Save() error {
-	collection := database.GetCollection("usersCredentials")
-	_, err := collection.InsertOne(context.Background(), u)
-	return err
-}
+// Credentials struct for handling login requests
 type Credentials struct {
-    Email    string `json:"email"`
-    Password string `json:"password"`
+    Email    string `json:"email" binding:"required,email"`
+    Password string `json:"password" binding:"required"`
 }
 
+// Validate checks if the provided credentials match the user's credentials
 func (u *User) Validate(credentials Credentials) *User {
-	// Check if user exists in MongoDB and validate password
-    collection := database.GetCollection("usersCredentials")
-    filter := bson.M{"email": credentials.Email}
-    err := collection.FindOne(context.Background(), filter).Decode(u)
-    if err != nil {
-        return nil // User not found
+    if u.Email == credentials.Email && utils.CheckPasswordHash(credentials.Password, u.Password) {
+        return u
     }
-    if !utils.CheckPasswordHash(credentials.Password, u.Password) {
-        return nil // Invalid password
-    }   
-	return u // Return valid user object
+    return nil
+}
+
+// Save saves the user to the database
+func (u *User) Save(db *gorm.DB) error {
+    // Convert preferences slice to JSON string
+    if len(u.Preferences) > 0 {
+        jsonPreferences, err := json.Marshal(u.Preferences)
+        if err != nil {
+            return err
+        }
+        u.Preferences = string(jsonPreferences)
+    }
+    return db.Create(u).Error
+}
+
+// GetByEmail fetches user by email from the PostgreSQL database
+func GetByEmail(db *gorm.DB, email string) (*User, error) {
+    var user User
+    err := db.Where("email = ?", email).First(&user).Error
+    return &user, err
+}
+
+// ValidateCredentials checks if the provided email and password match the stored credentials
+func (u *User) ValidateCredentials(db *gorm.DB, email, password string) (bool, error) {
+    foundUser, err := GetByEmail(db, email)
+    if err != nil {
+        return false, err
+    }
+    // Check if the provided password matches the stored hashed password
+    return utils.CheckPasswordHash(password, foundUser.Password), nil
 }

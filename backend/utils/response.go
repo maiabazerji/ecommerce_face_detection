@@ -6,10 +6,12 @@ import (
     "net/http"
 )
 
+// RespondWithError sends a JSON error response.
 func RespondWithError(w http.ResponseWriter, code int, message string) {
     RespondWithJSON(w, code, map[string]string{"error": message})
 }
 
+// RespondWithJSON sends a JSON response with the specified payload.
 func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
     response, _ := json.Marshal(payload)
 

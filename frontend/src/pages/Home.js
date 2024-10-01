@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { Link } from "react-router-dom";
-
+import Recommendations from '../components/recommendations';
 // Container for the homepage
 const HomeContainer = styled.div`
   text-align: center;
@@ -110,6 +110,8 @@ const Home = () => {
       <ButtonLink to="/products">Shop Now</ButtonLink>
 
       <ButtonLink to="/cart">View Cart</ButtonLink>
+ 
+      <Recommendations userId={username} />
     </HomeContainer>
   );
 };

@@ -1,34 +1,48 @@
 package main
 
 import (
-	"log"
-	"backend/database"
-	"backend/routes"
+    "log"
+    
 
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
+    "backend/models"
+    "backend/routes"
+
+    "gorm.io/driver/postgres"
+    "gorm.io/gorm"
+
+    "github.com/gin-gonic/gin"
+    "github.com/joho/godotenv"
 )
 
 func main() {
-	// Initialize MongoDB connection
-	err := database.InitMongoDB("mongodb://localhost:27017")
-	if err != nil {
-		log.Fatalf("Failed to connect to MongoDB: %v", err)
-	}
+    // Load environment variables
+    if err := godotenv.Load(); err != nil {
+        log.Fatalf("Error loading .env file: %v", err)
+    }
 
-	// Set up the router
-	router := gin.Default()
+    // Get the database connection details from environment variables
+    dsn := "host=localhost user=yourusername password=yourpassword dbname=ecommercedb port=5432 sslmode=disable"
+    
+    // Connect to PostgreSQL
+    db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+    if err != nil {
+        log.Fatalf("Error connecting to PostgreSQL database: %v", err)
+    }
 
-	// Enable CORS middleware
-	router.Use(cors.Default())
+    // Migrate the schema
+    if err := db.AutoMigrate(&models.User{}); err != nil { // Automatically create/update the User table
+        log.Fatalf("Error migrating database: %v", err)
+    }
 
-	// Routes
-	routes.UserRoutes(router)
-	routes.ProductRoutes(router)
-	for _, route := range router.Routes() {
-		log.Printf("Method: %s, Path: %s\n", route.Method, route.Path)
-	}
+    // Create a new Gin router
+    r := gin.Default()
 
-	// Start the server on port 8080
-	router.Run(":8080")
+    // Setup routes
+    routes.ProductRoutes(r) 
+    routes.UserRoutes(r)
+
+    // Start the server
+    if err := r.Run(":8080"); err != nil {
+        log.Fatalf("Failed to start server: %v", err)
+    }
 }
