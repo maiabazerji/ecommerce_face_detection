@@ -3,122 +3,96 @@ package controllers
 import (
 	"backend/database"
 	"backend/models"
-	"backend/utils"
-	"fmt"
-
-	"math/rand"
-	"mime/multipart"
+	"errors"
+	"log"
 	"net/http"
-	"path"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgconn"
+	"gorm.io/gorm"
 )
 
-
+// SignupInput represents the expected input for the Signup function
 type SignupInput struct {
-	Email        string                `form:"email" binding:"required,email"`
-	Password     string                `form:"password" binding:"required"`
-	Photo        *multipart.FileHeader  `form:"photo"`
-	FaceEncoding string                `bson:"face_encoding" json:"face_encoding,omitempty"`
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required"`
+	Username string `json:"username" binding:"required"`
 }
 
 // Signup handles user registration
 func Signup(c *gin.Context) {
 	var input SignupInput
-	if err := c.ShouldBind(&input); err != nil { // Bind form data, not JSON
+	if err := c.ShouldBindJSON(&input); err != nil {
+		log.Printf("Signup error: invalid input: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
-	// Hash password
-	hashedPassword, err := utils.HashPassword(input.Password)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not hash password"})
-		return
-	}
-
-	// Create new user
+	// Create a new user with provided fields
 	user := models.User{
-		Email:    input.Email,
-		Password: hashedPassword,
-		CreatedAt: time.Now(),
+		Email:       input.Email,
+		Password:    input.Password,
+		Username:    input.Username,
+		CreatedAt:   time.Now(),
 	}
-
-	// Handle photo upload (if provided)
-	if input.Photo != nil {
-		// Save the uploaded photo and get the file path
-		filePath, err := saveFile(c, input.Photo)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not save photo"})
-			return
-		}
-		user.PhotoURL = filePath
-	}
-
-	// Save user to the database
-	db := database.GetDB() // Ensure you have a function to get the GORM DB instance
-	if err := user.Save(db); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not save user"})
+	// Get the database instance
+	db := database.GetDB()
+	if db == nil {
+		log.Printf("Signup error: could not connect to database")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not connect to database"})
 		return
 	}
+    db.AutoMigrate(&models.User{})
 
-	c.JSON(http.StatusOK, gin.H{"message": "Signup successful!"})
-}
-
-// saveFile saves the uploaded file in the uploads folder and returns the file name
-func saveFile(c *gin.Context, file *multipart.FileHeader) (string, error) {
-	// Get file extension
-	extension := path.Ext(file.Filename)
-
-	// Generate random file name
-	fileName := randToken(12) + extension
-
-	// Save uploaded file to the server
-	if err := c.SaveUploadedFile(file, "uploads/"+fileName); err != nil {
-		return "", err
-	}
-
-	return fileName, nil
-}
-
-// randToken generates a random string of the given length
-func randToken(length int) string {
-	rand.Seed(time.Now().UnixNano())
-	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	b := make([]byte, length)
-	for i := range b {
-		b[i] = charset[rand.Intn(len(charset))]
-	}
-	return string(b)
-}
-
+// log.Printf("Attempting to save user with email: %s", user.Email)
+    // Insert user into the database
+    if err := db.Create(&user).Error; err != nil {
+        if pgErr, ok := err.(*pgconn.PgError); ok {
+            if pgErr.Code == "23505" {
+                log.Printf("Signup failed: user with email %s already exists", user.Email)
+                c.JSON(http.StatusConflict, gin.H{"error": "User with email already exists"})
+                return
+            }
+        }
+        log.Printf("Signup error: database error: %v", err)
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
+        return
+    }   
+    c.JSON(http.StatusCreated, gin.H{"message": "User created successfully"})
+    }
 // Login handles user login
 func Login(c *gin.Context) {
-	var credentials models.Credentials
+	var credentials models.Credentials // Struct for login credentials (email, password)
 	if err := c.ShouldBindJSON(&credentials); err != nil {
+		log.Printf("Login error: invalid input: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Get the database instance
+	db := database.GetDB()
+	if db == nil {
+		log.Printf("Login error: could not connect to database")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not connect to database"})
 		return
 	}
 
 	// Fetch user by email
-	user := models.User{}
-	db := database.GetDB() // Ensure you have a function to get the GORM DB instance
-	if err := db.Where("email = ?", credentials.Email).First(&user).Error; err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
-		return
-	}
-
-	// Validate the password
-	if validUser := user.Validate(credentials); validUser != nil {
-		token, err := utils.GenerateJWT(fmt.Sprintf("%d", user.ID), "E95FYBX9hJLMgu5b2KMjSo8hnKki/47sgCHdbqtfpJY=") // Convert uint to string
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate token"})
+	log.Printf("Attempting to find user with email: %s", credentials.Email)
+	var user models.User
+	if err := db.Where("LOWER(email) = LOWER(?)", credentials.Email).First(&user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			log.Printf("Login failed: user with email %s not found", credentials.Email)
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"token": token})
+		log.Printf("Login error: database query error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query error"})
 		return
 	}
 
-	c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+
+
+	// JWT token generation would go here
+	c.JSON(http.StatusOK, gin.H{"message": "Login successful!"})
 }

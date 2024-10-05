@@ -83,13 +83,13 @@ const Contact = () => {
     e.preventDefault(); // Prevent page reload
 
     try {
-      // Mock submitting the form data to the backend (replace with actual logic)
-      const response = await fetch("/api/contact", {
+      // Submitting form data to the backend
+      const response = await fetch("http://localhost:8080/contact", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(formData)  // Sending form data as JSON
       });
 
       if (response.ok) {

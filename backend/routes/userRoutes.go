@@ -2,14 +2,11 @@ package routes
 
 import (
 	"backend/controllers"
-
 	"github.com/gin-gonic/gin"
 )
 
 func UserRoutes(router *gin.Engine) {
-	userRoutes := router.Group("/")
-	{
-		userRoutes.POST("/signup", controllers.Signup)
-		userRoutes.POST("/login", controllers.Login)
-	}
+	// Register the signup and login routes directly without extra grouping
+	router.POST("/signup", controllers.Signup)
+	router.POST("/login", controllers.Login)
 }

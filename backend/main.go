@@ -1,48 +1,45 @@
 package main
 
 import (
-    "log"
-    
+	"backend/database"
+	"backend/models"
+	"backend/routes"
+	"log"
 
-    "backend/models"
-    "backend/routes"
-
-    "gorm.io/driver/postgres"
-    "gorm.io/gorm"
-
-    "github.com/gin-gonic/gin"
-    "github.com/joho/godotenv"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
-    // Load environment variables
-    if err := godotenv.Load(); err != nil {
-        log.Fatalf("Error loading .env file: %v", err)
-    }
+	// Initialize the database connection
+	// Provide the correct values for the database connection
+	err := database.Connect("root", "secret", "ecommercedb", "localhost", "5432")
+	if err != nil {
+		log.Fatalf("Error connecting to database: %v", err)
+	}
 
-    // Get the database connection details from environment variables
-    dsn := "host=localhost user=yourusername password=yourpassword dbname=ecommercedb port=5432 sslmode=disable"
-    
-    // Connect to PostgreSQL
-    db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-    if err != nil {
-        log.Fatalf("Error connecting to PostgreSQL database: %v", err)
-    }
+	// Now you can use the database connection
+	db := database.GetDB()
+	if db == nil {
+		log.Fatalf("Database is not connected")
+	}
 
-    // Migrate the schema
-    if err := db.AutoMigrate(&models.User{}); err != nil { // Automatically create/update the User table
-        log.Fatalf("Error migrating database: %v", err)
-    }
+	err = db.AutoMigrate(&models.User{})
+	if err != nil {
+		log.Fatal("Failed to run migrations:", err)
+	}
 
-    // Create a new Gin router
-    r := gin.Default()
+	if err := db.AutoMigrate(&models.Contact{}); err != nil {
+		log.Fatalf("Auto migration failed: %v", err)
+	}
 
-    // Setup routes
-    routes.ProductRoutes(r) 
-    routes.UserRoutes(r)
+	// Initialize Gin router
+	router := gin.Default()
+	// Define the routes
+	routes.UserRoutes(router)
+	routes.ContactRoutes(router)
 
-    // Start the server
-    if err := r.Run(":8080"); err != nil {
-        log.Fatalf("Failed to start server: %v", err)
-    }
+	router.Run() // Start the server
+	port := "8080"
+	log.Printf("Server running on port %s", port)
+
 }
