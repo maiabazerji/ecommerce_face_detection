@@ -5,7 +5,7 @@ import styled from "styled-components";
 
 // Styled Components
 const NavBar = styled.nav`
-  background-color: #333;
+  background-color: #000; // Set navbar background to black
   color: #fff;
   padding: 10px 20px;
   display: flex;
@@ -13,8 +13,14 @@ const NavBar = styled.nav`
   align-items: center;
 `;
 
+const Logo = styled.img`
+  height: 40px; // Adjust the height of the logo as needed
+  margin-right: 20px; // Space between logo and links
+`;
+
 const NavLinksLeft = styled.div`
   display: flex;
+  align-items: center; // Center items vertically
 `;
 
 const NavLinksRight = styled.div`
@@ -28,7 +34,7 @@ const NavLink = styled(Link)`
   font-size: 1rem;
 
   &:hover {
-    color: #f0f0f0;
+    color: #f0f0f0; // Lighten color on hover
   }
 `;
 
@@ -37,10 +43,11 @@ const Header = () => {
     <header>
       <NavBar>
         <NavLinksLeft>
+          <Logo src="/BazerjiCode.png" alt="Logo" />
           <NavLink to="/">Home</NavLink>
           <NavLink to="/products">Products</NavLink>
           <NavLink to="/about">About</NavLink>
-          <NavLink to="/Auth">Signup/Login</NavLink>
+          <NavLink to="/login">Login</NavLink>
         </NavLinksLeft>
         <NavLinksRight>
           <NavLink to="/contact">Contact</NavLink>

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 
 const CameraCapture = ({ onCapture }) => {
     const videoRef = useRef(null);
@@ -6,9 +6,15 @@ const CameraCapture = ({ onCapture }) => {
     const [isCameraActive, setIsCameraActive] = useState(false);
 
     const startCamera = async () => {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        videoRef.current.srcObject = stream;
-        setIsCameraActive(true);
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            if (videoRef.current) { // Ensure videoRef.current is not null
+                videoRef.current.srcObject = stream;
+                setIsCameraActive(true);
+            }
+        } catch (error) {
+            console.error("Error accessing the camera:", error);
+        }
     };
 
     const capturePhoto = () => {
@@ -19,6 +25,25 @@ const CameraCapture = ({ onCapture }) => {
         onCapture(imageData); // Call the parent component's onCapture function
     };
 
+    useEffect(() => {
+        if (isCameraActive) {
+            startCamera();
+        }
+
+        // Store the current videoRef value in a local variable
+        const currentVideoRef = videoRef.current;
+
+        return () => {
+            // Cleanup: stop the camera stream on unmount
+            if (currentVideoRef && currentVideoRef.srcObject) {
+                const stream = currentVideoRef.srcObject;
+                const tracks = stream.getTracks();
+                tracks.forEach(track => track.stop());
+                currentVideoRef.srcObject = null;
+            }
+        };
+    }, [isCameraActive]);
+
     return (
         <div>
             {isCameraActive ? (
@@ -28,7 +53,7 @@ const CameraCapture = ({ onCapture }) => {
                     <button onClick={capturePhoto}>Capture Photo</button>
                 </div>
             ) : (
-                <button onClick={startCamera}>Start Camera</button>
+                <p>Please allow camera access.</p>
             )}
         </div>
     );

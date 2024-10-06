@@ -1,10 +1,13 @@
 package main
 
 import (
+	"backend/controllers"
 	"backend/database"
 	"backend/models"
 	"backend/routes"
 	"log"
+
+	"github.com/gin-contrib/cors"
 
 	"github.com/gin-gonic/gin"
 )
@@ -31,13 +34,14 @@ func main() {
 	if err := db.AutoMigrate(&models.Contact{}); err != nil {
 		log.Fatalf("Auto migration failed: %v", err)
 	}
-
 	// Initialize Gin router
 	router := gin.Default()
 	// Define the routes
+	router.Use(cors.Default())
 	routes.UserRoutes(router)
 	routes.ContactRoutes(router)
-
+	routes.ProductRoutes(router)
+	router.GET("/products/:id", controllers.GetProductByID)
 	router.Run() // Start the server
 	port := "8080"
 	log.Printf("Server running on port %s", port)

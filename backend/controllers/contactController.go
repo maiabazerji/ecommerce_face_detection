@@ -42,10 +42,11 @@ func SubmitContact(c *gin.Context) {
 
 	// Insert the contact message into the database
 	if err := db.Create(&contact).Error; err != nil {
-		log.Printf("Contact form submission error: database error: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
+		log.Printf("Contact form submission error: could not save contact message: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not save contact message"})
 		return
 	}
+
 
 	log.Printf("Contact form submitted successfully by %s", input.Email)
 	c.JSON(http.StatusCreated, gin.H{"message": "Thank you for contacting us!"})

@@ -1,172 +1,168 @@
-import React, { useState } from "react";
-import styled from "styled-components";
-import axios from 'axios';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import CameraCapture from '../components/CameraCapture'; // Adjust the path as necessary
 
-// Styled Components
-const FormContainer = styled.div`
-  text-align: center;
-  padding: 20px;
-  background-color: #fff3cd;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-`;
-
-const FormTitle = styled.h2`
-  font-size: 2rem;
-  color: #333;
-  margin-bottom: 20px;
-`;
-
-const Form = styled.form`
-  width: 300px;
-  display: flex;
-  flex-direction: column;
-`;
-
-const Input = styled.input`
-  padding: 10px;
-  margin-bottom: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  font-size: 1rem;
-`;
-
-const Button = styled.button`
-  padding: 10px;
-  background-color: #28a745;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  font-size: 1rem;
-  cursor: pointer;
-
-  &:hover {
-    background-color: #218838;
-  }
-`;
-
-const Video = styled.video`
-  display: ${({ isCameraEnabled }) => (isCameraEnabled ? "block" : "none")};
-  margin-top: 20px;
-`;
-
-// Login Component
 const Login = () => {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: ""
-  });
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [email, setEmail] = useState('');
+    const [image, setImage] = useState(null); // State to store captured image
+    const [isCameraActive, setIsCameraActive] = useState(false); // State to track camera status
+    const navigate = useNavigate(); // Hook for programmatic navigation
 
-  const [isCameraEnabled, setIsCameraEnabled] = useState(false);
-  const [videoStream, setVideoStream] = useState(null);
+    const handleLogin = async (e) => {
+        e.preventDefault();
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
+        const requestBody = { username, password, image }; // Include captured image
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-  
-    try {
-      // Send the login request to your backend
-      const response = await axios.post("/login", {
-        email: formData.email,
-        password: formData.password,
-      });
+        // Send the login request
+        try {
+            const response = await fetch("http://localhost:8080/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(requestBody),
+            });
 
-      console.log("Login response:", response.data);
-  
-      // Handle successful login
-      if (response.data.success) {
-        window.location.href = "/UserDashboard";
-      } else {
-        // Handle the case where login fails
-        console.error("Login failed:", response.data.message);
-      }
-    } catch (error) {
-      // Handle any errors (network issues, backend errors, etc.)
-      console.error("Login error:", error.response?.data || error.message);
-    }
-  };
-  
-  const handleCameraLogin = async () => {
-    try {
-      setIsCameraEnabled(true);
-      const video = document.getElementById("video");
+            if (!response.ok) {
+                throw new Error(`Login failed: ${response.statusText}`);
+            }
 
-      if (!videoStream) {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        video.srcObject = stream;
-        setVideoStream(stream);
-        video.play();
-      }
-    } catch (error) {
-      console.error("Error accessing the camera:", error);
-      alert("Please grant camera access.");
-    }
-  };
+            const data = await response.json();
 
-  const captureImage = async () => {
-    const video = document.getElementById("video");
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const context = canvas.getContext("2d");
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const image = canvas.toDataURL("image/png");
+            // Check if token is received and store it
+            if (data.token) {
+                localStorage.setItem('token', data.token); // Store JWT token in local storage
+                alert('Login successful!'); // Show success message
+                navigate('/dashboard'); // Navigate to dashboard
+            } else {
+                alert('Login failed: No token received.'); // Handle token not received
+            }
+        } catch (error) {
+            console.error("Error:", error);
+        }
+    };
 
-    try {
-      // Send image to backend
-      const response = await fetch("http://localhost:8080/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
+    const handleCapture = (imageData) => {
+        setImage(imageData); // Store the captured image
+        setIsCameraActive(false); // Deactivate the camera after capture
+    };
+
+    // Inline styles
+    const styles = {
+        body: {
+            animation: 'gradient 5s ease infinite',
+            margin: '0',
+            fontFamily: 'Arial, sans-serif',
+            height: '100vh',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: '#6a11cb',
+            position: 'relative',
+            overflow: 'hidden',
         },
-        body: JSON.stringify({ image })
-      });
+        form: {
+            backgroundColor: '#fff',
+            borderRadius: '8px',
+            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+            padding: '40px',
+            width: '300px',
+            textAlign: 'center',
+            zIndex: 1,
+        },
+        input: {
+            width: '100%',
+            padding: '10px',
+            margin: '10px 0',
+            borderRadius: '4px',
+            border: '1px solid #ddd',
+            boxSizing: 'border-box',
+            fontSize: '16px',
+        },
+        button: {
+            backgroundColor: '#007bff',
+            color: 'white',
+            border: 'none',
+            padding: '10px 20px',
+            borderRadius: '5px',
+            cursor: 'pointer',
+            transition: 'background-color 0.3s',
+            width: '100%',
+            fontSize: '16px',
+        },
+        title: {
+            color: '#6a11cb',
+            marginBottom: '20px',
+        },
+        cameraButton: {
+            backgroundColor: '#28a745', // Different color for camera button
+            color: 'white',
+            border: 'none',
+            padding: '10px 20px',
+            borderRadius: '5px',
+            cursor: 'pointer',
+            transition: 'background-color 0.3s',
+            width: '100%',
+            fontSize: '16px',
+            marginTop: '10px', // Add margin to separate from other inputs
+        },
+    };
 
-      const result = await response.json();
-      console.log("Face recognition result:", result);
-    } catch (error) {
-      console.error("Face recognition error:", error);
-    }
-  };
-
-  return (
-    <FormContainer>
-      <FormTitle>Login</FormTitle>
-      <Form onSubmit={handleSubmit}>
-        <Input
-          type="email"
-          name="email"
-          placeholder="Email"
-          value={formData.email}
-          onChange={handleChange}
-          required
-        />
-        <Input
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={formData.password}
-          onChange={handleChange}
-          required
-        />
-        <Button type="submit">Login</Button> <br />
-        <Button type="button" onClick={handleCameraLogin}>Login by Camera</Button>
-        {isCameraEnabled && (
-          <>
-            <Video id="video" width="720" height="560" autoPlay isCameraEnabled={isCameraEnabled} />
-            <Button type="button" onClick={captureImage}>Capture Image</Button>
-          </>
-        )}
-      </Form>
-    </FormContainer>
-  );
+    return (
+        <div style={styles.body}>
+            <form style={styles.form} onSubmit={handleLogin}>
+                <h2 style={styles.title}>Login</h2>
+                <input
+                    type="text"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    style={styles.input}
+                />
+                <input
+                    type="text"
+                    placeholder="Username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    required
+                    style={styles.input}
+                />
+                <input
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    style={styles.input}
+                />
+                <button type="submit" style={styles.button}>Login</button>
+                
+                <button 
+                    type="button" 
+                    onClick={() => setIsCameraActive(true)} 
+                    style={styles.cameraButton}>
+                    Login by Camera
+                </button>
+                
+                {isCameraActive && (
+                    <CameraCapture onCapture={handleCapture} />
+                )}
+                
+                <div>
+                    <p>
+                        Don't have an account? 
+                        <span 
+                            style={{ cursor: 'pointer', color: '#007bff' }} 
+                            onClick={() => navigate('/signup')}> Sign Up
+                        </span>
+                    </p>
+                </div>
+            </form>
+        </div>
+    );
 };
 
 export default Login;
