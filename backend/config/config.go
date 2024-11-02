@@ -11,6 +11,7 @@ type Config struct {
 	DBDriver   string
 	DBSource   string
 	JWTSecret  string
+	PostgresURI string
 }
 
 func LoadConfig() Config {
@@ -22,6 +23,6 @@ func LoadConfig() Config {
 	return Config{
 		DBDriver:  os.Getenv("DB_DRIVER"),
 		DBSource:  os.Getenv("DB_SOURCE"),
-		JWTSecret: os.Getenv("JWT_SECRET"),
+		PostgresURI: os.Getenv("POSTGRESQL_URI"),
 	}
 }

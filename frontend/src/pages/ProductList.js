@@ -1,47 +1,46 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import Slider from 'react-slick'; 
+import Slider from 'react-slick';
 import "slick-carousel/slick/slick.css"; 
 import "slick-carousel/slick/slick-theme.css";
 
 const ProductList = () => {
-    const [products, setProducts] = useState([]); // Updated to 'products'
+    const [products, setProducts] = useState([]);
+    const [error, setError] = useState('');
 
     const fetchProducts = async () => {
         try {
             const response = await fetch('http://localhost:8080/products');
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorText = await response.text();
+                throw new Error(`Error: ${response.status} - ${errorText}`);
             }
             const data = await response.json();
-            console.log('Fetched products:', data); // Log fetched data
+            console.log('Fetched products:', data);
             setProducts(data);
         } catch (error) {
             console.error('Error fetching products:', error);
+            setError(error.message);
         }
     };
-    
-      
 
     useEffect(() => {
-        fetchProducts(); // Fetch products when the component mounts
+        fetchProducts();
     }, []);
 
     const sliderSettings = {
         dots: true,
         infinite: true,
         speed: 500,
-        slidesToShow: 1,  // Show 1 product per slide
+        slidesToShow: 1,
         slidesToScroll: 1,
         autoplay: true,
         autoplaySpeed: 3000,
-        arrows: true // Show left and right arrows
+        arrows: true,
     };
 
-    // Inline styles
     const styles = {
         body: {
-            animation: 'gradient 5s ease infinite',
             margin: '0',
             fontFamily: 'Arial, sans-serif',
             height: '100vh',
@@ -51,11 +50,6 @@ const ProductList = () => {
             backgroundColor: '#6a11cb',
             position: 'relative',
             overflow: 'hidden'
-        },
-        '@keyframes gradient': {
-            '0%': { backgroundColor: '#6a11cb' },
-            '50%': { backgroundColor: '#2575fc' },
-            '100%': { backgroundColor: '#6a11cb' }
         },
         container: {
             padding: '50px',
@@ -87,7 +81,7 @@ const ProductList = () => {
         },
         text: {
             margin: '0 0 5px',
-            color: '#555'
+            color: 'black'
         },
         button: {
             backgroundColor: '#007bff',
@@ -102,31 +96,23 @@ const ProductList = () => {
             color: 'white',
             textDecoration: 'none'
         },
-        slickArrow: {
-            zIndex: 1,
-            color: 'lightblue',
-            background: 'rgba(255, 255, 255, 0.5)', 
-            borderRadius: '50%',
-            padding: '10px',
-            width: '40px',
-            height: '40px'
-        },
     };
 
     return (
         <div style={styles.body}>
             <div style={styles.container}>
-                <h1 style={{ color: '#6a11cb' }}>Check Our Products</h1> 
+                <h1 style={{ color: '#6a11cb' }}>Check Our Products</h1>
+                {error && <p style={{ color: 'red' }}>Error: {error}</p>}
                 {products.length === 0 ? (
-                    <p>No products available.</p> // Message updated
+                    <p>No products available.</p>
                 ) : (
                     <Slider {...sliderSettings}>
                         {products.map(product => (
                             <div style={styles.card} key={product.id}>
-                                <img src={product.image_url} alt={product.name} style={styles.image} />
-                                <div style={{ padding: '80px' }}>
+                                <img src={process.env.PUBLIC_URL + product.imageURL} alt={product.name} style={styles.image} />
+                                <div style={{ padding: '20px' }}>
                                     <h2 style={styles.title}>{product.name}</h2>
-                                    <p style={styles.text}>Price: ${product.price}</p>
+                                    <p style={styles.text}>Price: ${product.price.toFixed(2)}</p>
                                     <button style={styles.button}>
                                         <Link to={`/product/${product.id}`} style={styles.link}>More details</Link>
                                     </button>

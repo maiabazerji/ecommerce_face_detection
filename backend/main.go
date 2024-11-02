@@ -1,49 +1,53 @@
 package main
 
 import (
-	"backend/controllers"
 	"backend/database"
 	"backend/models"
 	"backend/routes"
 	"log"
 
 	"github.com/gin-contrib/cors"
-
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	// Initialize the database connection
-	// Provide the correct values for the database connection
-	err := database.Connect("root", "secret", "ecommercedb", "localhost", "5432")
+	// Connect to the database
+	err := database.Connect("postgres", "postgres", "ecommerce", "localhost", "5433")
 	if err != nil {
 		log.Fatalf("Error connecting to database: %v", err)
 	}
 
-	// Now you can use the database connection
+	// Get the database instance
 	db := database.GetDB()
 	if db == nil {
 		log.Fatalf("Database is not connected")
 	}
 
-	err = db.AutoMigrate(&models.User{})
-	if err != nil {
-		log.Fatal("Failed to run migrations:", err)
-	}
+	// Run migrations
 
-	if err := db.AutoMigrate(&models.Contact{}); err != nil {
+	if err := db.AutoMigrate(&models.User{}, &models.Contact{}); err != nil {
 		log.Fatalf("Auto migration failed: %v", err)
 	}
-	// Initialize Gin router
-	router := gin.Default()
-	// Define the routes
-	router.Use(cors.Default())
-	routes.UserRoutes(router)
-	routes.ContactRoutes(router)
-	routes.ProductRoutes(router)
-	router.GET("/products/:id", controllers.GetProductByID)
-	router.Run() // Start the server
-	port := "8080"
-	log.Printf("Server running on port %s", port)
+	if err := db.AutoMigrate(&models.User{}, &models.Product{}); err != nil {
+		log.Fatalf("Auto migration failed: %v", err)
+	}
 
+	// Initialize the Gin router
+	router := gin.Default()
+
+	// Enable CORS for cross-origin requests
+	router.Use(cors.Default())
+
+	// Register routes
+	routes.UserRoutes(router)       
+	routes.ContactRoutes(router)    
+	routes.ProductRoutes(router)
+	routes.PDFRoutes(router)        
+
+	// Start the server
+	port := "8080"
+	log.Printf("Starting server on port %s...", port)
+	if err := router.Run(":" + port); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
 }

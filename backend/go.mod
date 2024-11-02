@@ -45,7 +45,9 @@ require (
 require (
 	github.com/gin-contrib/cors v1.7.2
 	github.com/gin-gonic/gin v1.10.0
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang/snappy v0.0.4 // indirect
+	github.com/jmoiron/sqlx v1.4.0
 	github.com/joho/godotenv v1.5.1
 	// github.com/gorilla/mux v1.8.1
 	github.com/klauspost/compress v1.17.10 // indirect

@@ -1,5 +1,6 @@
 import React from "react";
 import styled, { keyframes } from "styled-components";
+import { FaLaptopCode, FaShieldAlt, FaBrain } from "react-icons/fa"; // Importing icons
 
 // Background animation with a purple base
 const backgroundAnimation = keyframes`
@@ -64,22 +65,82 @@ const AdditionalInfo = styled.div`
   animation: ${fadeIn} 2s ease-in-out;
 `;
 
+// Service List with icons styling
+const ServiceList = styled.div`
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 50px;
+  align-items: center;
+`;
+
+const ServiceItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  color: #fff;
+  font-size: 1.2rem;
+
+  // Link styling
+  a {
+    color: white;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    &:hover {
+      color: purple; // Change color to purple on hover
+    }
+
+    &:active {
+      color: purple; // Change color to purple when clicking
+    }
+  }
+`;
+
 // Main About Component
 const About = () => {
   return (
     <AboutContainer>
       <Title>About Us</Title>
       <Description>
-        Welcome to our e-commerce platform, your gateway to cutting-edge IT solutions. 
-        We specialize in web development, AI integration, and cybersecurity services designed to empower your business.
-        Our mission is to provide high-quality solutions that push boundaries in the digital world.
+        Hi, I’m a passionate student from Epitech launching an innovative e-commerce platform dedicated to providing 
+        advanced IT services. With a strong focus on <b>web development</b>, <b>AI integration</b>, and <b>cybersecurity</b>, 
+        I’m here to help businesses and individuals harness the power of technology.
       </Description>
+      <ServiceList>
+        <ServiceItem>
+          <a href="/pdfs/webdev-code-coffee.pdf" download>
+            <FaLaptopCode size={50} />
+            <p>Web Development</p>
+          </a>
+        </ServiceItem>
+        <ServiceItem>
+          <a href="/pdfs/ai-integration.pdf" download>
+            <FaBrain size={50} />
+            <p>AI Integration</p>
+          </a>
+        </ServiceItem>
+        <ServiceItem>
+          <a href="/pdfs/cybersecurity.pdf" download>
+            <FaShieldAlt size={50} />
+            <p>Cybersecurity</p>
+          </a>
+        </ServiceItem>
+      </ServiceList>
       <AdditionalInfo>
         <p>
-          From AI-powered applications to secure web platforms, we offer the expertise you need to stay ahead in the tech industry.
+          My journey at <b>Epitech</b> has driven me to push boundaries and create solutions that reflect the ever-evolving digital landscape.
+          This platform is not just a service – it's a vision of where I believe the future of technology is heading.
         </p>
         <p>
-          Explore our services and discover how we can transform your digital presence.
+          Whether you're looking to transform your online presence with a robust website, integrate smart AI solutions into your business,
+          or safeguard your data with state-of-the-art cybersecurity tools, I've got you covered. Together, let's shape the future of tech!
+        </p>
+        <p>
+          Explore the range of services I offer and find out how we can collaborate to bring your vision to life.
         </p>
       </AdditionalInfo>
     </AboutContainer>

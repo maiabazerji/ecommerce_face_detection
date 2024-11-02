@@ -11,9 +11,9 @@ import (
 // models/user.go
 type User struct {
     ID          uint      `gorm:"primaryKey"`
-    Username    string    `gorm:"column:username"`
+    Username    string    `gorm:"column:username;unique"`
     Password    string    `gorm:"column:password"`
-    Email       string    `gorm:"column:email" unique:"true"`
+    Email       string    `gorm:"column:email;unique"`
     CreatedAt   time.Time `gorm:"column:created_at"`
 }
 

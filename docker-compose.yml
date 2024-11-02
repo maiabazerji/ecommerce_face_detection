@@ -1,0 +1,56 @@
+services:
+  db:
+    image: postgres:17.0
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5433:5432" 
+    volumes:
+      - ./ecommerce_postgres_db:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+
+  # gin_backend:
+  #   container_name: gin_backend  
+  #   build:
+  #     context: ./backend
+  #   volumes:
+  #     - ./backend:/app
+  #   depends_on:
+  #     - db
+
+  # react_frontend:
+  #   container_name: react_frontend  # Updated name
+  #   build:
+  #     context: ./frontend
+  #   volumes:
+  #     - ./frontend:/app
+  #   depends_on:
+  #     - gin_backend
+
+
+
+
+    # networks:
+    #   - ecommerce-network
+
+  # nginx:
+  #   container_name: nginx
+  #   image: nginx:1.19.0
+  #   ports:
+  #     - '80:80'
+  #   volumes:
+  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+  #   depends_on:
+  #     - frontend
+  #   networks:
+  #     - ecommerce-network
+
+volumes:
+  ecommerce_postgres_db:
+
+# Uncomment the following lines if you wish to define a custom network
+# networks:
+#   ecommerce-network:
+#     driver: bridge

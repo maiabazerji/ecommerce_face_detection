@@ -1,29 +1,29 @@
-# Stage 1: Build the React app
-FROM node:16 AS build
+# Dockerfile for React Frontend
+FROM node:18 AS build
 
-# Set the working directory inside the container
+# Set the Current Working Directory inside the container
 WORKDIR /app
 
-# Copy package.json and package-lock.json (or yarn.lock) to the container
-COPY e-commerce-frontend/package*.json ./
+# Copy package.json and package-lock.json to the working directory
+COPY package.json package-lock.json ./
 
 # Install dependencies
 RUN npm install
 
-# Copy the rest of the application code to the container
-COPY e-commerce-frontend ./
+# Copy the rest of the application code
+COPY . .
 
-# Build the React app
+# Build the application
 RUN npm run build
 
-# Stage 2: Serve the React app
+# Start a new stage from scratch
 FROM nginx:alpine
 
-# Copy the built files from the build stage to the Nginx container
+# Copy the built application from the previous stage
 COPY --from=build /app/build /usr/share/nginx/html
 
-# Expose port 80 to the outside world
-EXPOSE 80
+# Expose port 3000 to the outside world
+EXPOSE 3000
 
-# Start Nginx and keep it running in the foreground
+# Start Nginx server
 CMD ["nginx", "-g", "daemon off;"]

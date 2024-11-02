@@ -1,28 +1,26 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import CameraCapture from '../components/CameraCapture'; // Adjust the path as necessary
+import CameraCapture from '../components/CameraCapture'; // Ensure correct import path for CameraCapture component
 
 const Login = () => {
-    const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [email, setEmail] = useState('');
-    const [image, setImage] = useState(null); // State to store captured image
-    const [isCameraActive, setIsCameraActive] = useState(false); // State to track camera status
-    const navigate = useNavigate(); // Hook for programmatic navigation
+    const [image, setImage] = useState(null); 
+    const [isCameraActive, setIsCameraActive] = useState(false); // Track the camera status
+    const navigate = useNavigate(); // Hook for navigation
 
     const handleLogin = async (e) => {
         e.preventDefault();
 
-        const requestBody = { username, password, image }; // Include captured image
+        const requestBody = { email, password, image }; // Include image in the login request
 
-        // Send the login request
         try {
             const response = await fetch("http://localhost:8080/login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify(requestBody),
+                body: JSON.stringify(requestBody), // Send JSON with image data if captured
             });
 
             if (!response.ok) {
@@ -31,25 +29,27 @@ const Login = () => {
 
             const data = await response.json();
 
-            // Check if token is received and store it
+            // Check for token and store it if received
             if (data.token) {
-                localStorage.setItem('token', data.token); // Store JWT token in local storage
-                alert('Login successful!'); // Show success message
-                navigate('/dashboard'); // Navigate to dashboard
+                localStorage.setItem('token', data.token); // Save JWT token to local storage
+                // alert('Login successful!');
+                localStorage.setItem("username", data.username);
+                localStorage.setItem("userId", data.userId);
+                navigate('/dashboard'); // Redirect to dashboard
             } else {
-                alert('Login failed: No token received.'); // Handle token not received
+                alert('Login failed: No token received.');
             }
         } catch (error) {
             console.error("Error:", error);
+            alert('Login failed. Please try again.'); // Display a user-friendly error message
         }
     };
 
     const handleCapture = (imageData) => {
-        setImage(imageData); // Store the captured image
-        setIsCameraActive(false); // Deactivate the camera after capture
+        setImage(imageData); // Store captured image data
+        setIsCameraActive(false); // Deactivate the camera after capturing the image
     };
 
-    // Inline styles
     const styles = {
         body: {
             animation: 'gradient 5s ease infinite',
@@ -91,23 +91,12 @@ const Login = () => {
             transition: 'background-color 0.3s',
             width: '100%',
             fontSize: '16px',
+            marginTop: '10px', // Added margin for spacing
         },
         title: {
             color: '#6a11cb',
             marginBottom: '20px',
-        },
-        cameraButton: {
-            backgroundColor: '#28a745', // Different color for camera button
-            color: 'white',
-            border: 'none',
-            padding: '10px 20px',
-            borderRadius: '5px',
-            cursor: 'pointer',
-            transition: 'background-color 0.3s',
-            width: '100%',
-            fontSize: '16px',
-            marginTop: '10px', // Add margin to separate from other inputs
-        },
+        }
     };
 
     return (
@@ -115,18 +104,10 @@ const Login = () => {
             <form style={styles.form} onSubmit={handleLogin}>
                 <h2 style={styles.title}>Login</h2>
                 <input
-                    type="text"
+                    type="email"
                     placeholder="Email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    required
-                    style={styles.input}
-                />
-                <input
-                    type="text"
-                    placeholder="Username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
                     required
                     style={styles.input}
                 />
@@ -139,24 +120,27 @@ const Login = () => {
                     style={styles.input}
                 />
                 <button type="submit" style={styles.button}>Login</button>
-                
-                <button 
-                    type="button" 
-                    onClick={() => setIsCameraActive(true)} 
-                    style={styles.cameraButton}>
+
+                <button
+                    type="button"
+                    onClick={() => setIsCameraActive(true)} // Activate the camera when the button is clicked
+                    style={styles.button} // Reuse the same button style
+                >
                     Login by Camera
                 </button>
-                
+
                 {isCameraActive && (
-                    <CameraCapture onCapture={handleCapture} />
+                    <CameraCapture onCapture={handleCapture} /> // Render camera component if active
                 )}
-                
+
                 <div>
                     <p>
                         Don't have an account? 
-                        <span 
-                            style={{ cursor: 'pointer', color: '#007bff' }} 
-                            onClick={() => navigate('/signup')}> Sign Up
+                        <span
+                            style={{ cursor: 'pointer', color: '#007bff' }}
+                            onClick={() => navigate('/signup')}
+                        >
+                            Sign Up
                         </span>
                     </p>
                 </div>

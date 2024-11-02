@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 
 const Signup = () => {
     const navigate = useNavigate();
-    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [username, setUsername] = useState('');
     const [photo, setPhoto] = useState(null);
+    const [error, setError] = useState('');
 
     const handlePhotoChange = (e) => {
         setPhoto(e.target.files[0]);
@@ -13,31 +15,37 @@ const Signup = () => {
 
     const handleSignup = async (e) => {
         e.preventDefault();
-        const formData = new FormData();
-        formData.append("username", username);
-        formData.append("password", password);
-        if (photo) {
-            formData.append("photo", photo);
-        }
-
+    
+        const signupData = {
+            email,
+            password,
+            username,
+            photo
+        };
+    
         try {
-            const response = await fetch("http://localhost:8080/signup", {
+            const response = await fetch('http://localhost:8080/signup', {
                 method: "POST",
-                body: formData,
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(signupData),
             });
-
+    
             if (!response.ok) {
-                throw new Error(`Signup failed: ${response.statusText}`);
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Signup failed');
             }
-
+    
             const data = await response.json();
-            alert(data.message);
+            // alert(data.message);
+            navigate('/login');
         } catch (error) {
             console.error("Error:", error);
+            setError("Signup failed. Please try again.");
         }
     };
-
-    // Inline styles
+    
     const styles = {
         body: {
             animation: 'gradient 5s ease infinite',
@@ -47,14 +55,9 @@ const Signup = () => {
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            backgroundColor: '#6a11cb', // Fallback color
+            backgroundColor: '#6a11cb',
             position: 'relative',
             overflow: 'hidden'
-        },
-        '@keyframes gradient': {
-            '0%': { backgroundColor: '#6a11cb' }, // Purple
-            '50%': { backgroundColor: '#2575fc' }, // Blue
-            '100%': { backgroundColor: '#6a11cb' } // Purple
         },
         form: {
             backgroundColor: '#fff',
@@ -63,7 +66,7 @@ const Signup = () => {
             padding: '40px',
             width: '300px',
             textAlign: 'center',
-            zIndex: 1 // Ensure form is above the background
+            zIndex: 1
         },
         input: {
             width: '100%',
@@ -85,12 +88,13 @@ const Signup = () => {
             width: '100%',
             fontSize: '16px'
         },
-        buttonHover: {
-            backgroundColor: '#0056b3'
-        },
         title: {
-            color: '#6a11cb', // Title color
+            color: '#6a11cb',
             marginBottom: '20px'
+        },
+        error: {
+            color: 'red',
+            margin: '10px 0'
         }
     };
 
@@ -98,11 +102,20 @@ const Signup = () => {
         <div style={styles.body}>
             <form style={styles.form} onSubmit={handleSignup}>
                 <h2 style={styles.title}>Sign Up</h2>
+                {error && <p style={styles.error}>{error}</p>}
                 <input
                     type="text"
                     placeholder="Username"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
+                    required
+                    style={styles.input}
+                />
+                <input
+                    type="text"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     required
                     style={styles.input}
                 />
@@ -118,6 +131,7 @@ const Signup = () => {
                     type="file" 
                     onChange={handlePhotoChange} 
                     accept="image/*" 
+                    required
                     style={styles.input}
                 />
                 <button type="submit" style={styles.button}>Sign Up</button>
